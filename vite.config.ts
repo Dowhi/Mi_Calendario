@@ -43,8 +43,8 @@ export default defineConfig(({ mode }) => {
         type: 'autoUpdate'
       },
       manifest: {
-        name: 'CalSync - Calendario Compartido',
-        short_name: 'CalSync',
+        name: 'FamilySync - Calendario Compartido',
+        short_name: 'FamilySync',
         description: 'Calendario compartido sincronizado para gestión de turnos y eventos',
         theme_color: '#3880ff',
         background_color: '#ffffff',
