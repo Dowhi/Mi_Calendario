@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas simplificadas sin autenticación
+    // Todos pueden leer y escribir eventos
+    match /events/{eventId} {
+      // Permitir lectura a todos
+      allow read: if true;
+      
+      // Permitir creación a todos
+      allow create: if true;
+      
+      // Permitir actualización solo al propietario del evento
+      allow update: if request.resource.data.userId == resource.data.userId;
+      
+      // Permitir eliminación solo al propietario del evento
+      allow delete: if true;
+    }
+    
+    // Colección de configuración para usuario actual
+    match /config/{document} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}
