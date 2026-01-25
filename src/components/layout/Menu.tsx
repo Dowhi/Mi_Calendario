@@ -27,7 +27,7 @@ export const Menu: React.FC = () => {
     <IonMenu contentId="main-content" type="overlay">
       <IonHeader>
         <IonToolbar color="primary">
-          <IonTitle>CalSync</IonTitle>
+          <IonTitle>FamilySync</IonTitle>
         </IonToolbar>
       </IonHeader>
 

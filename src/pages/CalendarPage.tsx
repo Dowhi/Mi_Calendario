@@ -101,7 +101,7 @@ export const CalendarPage: React.FC = () => {
           <IonButtons slot="start">
             <IonMenuButton />
           </IonButtons>
-          <IonTitle>CalSync</IonTitle>
+          <IonTitle>FamilySync</IonTitle>
         </IonToolbar>
       </IonHeader>
 

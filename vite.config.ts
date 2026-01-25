@@ -6,7 +6,7 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Determinar el base path según el modo
-  const basePath = mode === 'github' ? '/CalSync/' : '/';
+  const basePath = mode === 'github' ? '/FamilySync/' : '/';
   
   return {
     base: basePath,
@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'firestore-cache',
+              cacheName: 'firestore-cache-v2',
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 7 // 7 días
