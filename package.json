@@ -1,0 +1,12 @@
+{
+    "name": "calendar-family-sync-docs",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "start": "npx serve docs -p 3000",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "vite": "^5.0.0"
+    }
+}
