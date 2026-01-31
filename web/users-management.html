@@ -562,6 +562,11 @@
                     dot.title = 'Firebase Conectado';
                 }
                 console.log('✅ Firebase conectado');
+                console.log('Firebase Config en uso:', {
+                    projectId: firebaseConfig.projectId,
+                    appId: firebaseConfig.appId,
+                    authDomain: firebaseConfig.authDomain
+                });
                 return true;
             } catch (error) {
                 console.error('❌ Error conectando Firebase:', error);
@@ -1116,6 +1121,15 @@
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
+        }
+
+        // Actualizar nombre del usuario en el array local
+        function updateUserName(userId, name) {
+            console.log(`✍️ Actualizando nombre para usuario ${userId}: ${name}`);
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.name = name;
+            }
         }
 
         // Actualizar preview del avatar
