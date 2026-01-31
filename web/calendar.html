@@ -2254,16 +2254,48 @@
 
         .modern-home {
             background: var(--modern-gradient);
-            min-height: 100%;
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             padding: 12px;
             padding-bottom: 60px;
-            /* Space for bottom nav */
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             gap: 12px;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #333;
+        }
+
+        /* Medieval Theme Specifics */
+        body.medieval-theme .modern-home {
+            background: none !important;
+            font-family: 'MedievalSharp', cursive;
+        }
+
+        body.medieval-theme {
+            background-image: url('medieval_bg.png');
+            background-repeat: repeat;
+            background-size: auto;
+        }
+
+        body.medieval-theme .glass-card {
+            background: rgba(244, 228, 188, 0.6);
+            border: 2px solid #5c4033;
+            border-radius: 4px;
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3);
+            backdrop-filter: none;
+        }
+
+        body.medieval-theme h1,
+        body.medieval-theme h3 {
+            font-family: 'Cinzel Decorative', serif;
+            color: #4a0404 !important;
+        }
+
+        body.medieval-theme .count-badge {
+            color: #800000 !important;
+            font-family: 'Cinzel Decorative', serif;
         }
 
         .fade-in {
@@ -2458,6 +2490,17 @@
             cursor: pointer;
             transition: all 0.2s;
             padding: 8px;
+        }
+
+        /* Medieval Toggle Button Style */
+        .medieval-btn {
+            background: linear-gradient(135deg, #8a0303, #5c0000);
+            color: #f4e4bc !important;
+            border: 2px solid #d4af37;
+        }
+
+        .medieval-btn .action-label {
+            color: #f4e4bc !important;
         }
 
         .action-icon-btn:active {
@@ -3057,6 +3100,15 @@
                 <div class="settings-row">
                     <div class="settings-label">Sexta semana solo si es necesaria</div>
                     <input id="stSmartWeeks" type="checkbox" class="settings-checkbox" />
+                </div>
+                <!-- Medieval Mode Toggle in Settings -->
+                <div class="settings-row">
+                    <div class="settings-label">📜 Modo Manuscrito Medieval</div>
+                    <label class="switch">
+                        <input type="checkbox" id="medievalToggle" onchange="toggleMedievalTheme()"
+                            class="settings-checkbox">
+                        <span class="slider round"></span>
+                    </label>
                 </div>
             </div>
             <div class="settings-group">
@@ -7711,6 +7763,36 @@
                 zIndex: bottomActions ? getComputedStyle(bottomActions).zIndex : 'N/A',
             });
         }, 1000);
+
+        function toggleMedievalTheme() {
+            document.body.classList.toggle('medieval-theme');
+            const isActive = document.body.classList.contains('medieval-theme');
+            localStorage.setItem('medieval_theme', isActive);
+
+            // Sincronizar checkbox si se accionó desde otro sitio (futuro)
+            const toggle = document.getElementById('medievalToggle');
+            if (toggle) toggle.checked = isActive;
+
+            showToast(isActive ? '🏰 Modo Manuscrito activado' : '📱 Modo Moderno restaurado');
+
+            // Forzar re-render si estamos en home
+            if (currentView === 'home') {
+                renderHome();
+            }
+        }
+
+        function toggleMedievalTheme() {
+            document.body.classList.toggle('medieval-theme');
+            const isActive = document.body.classList.contains('medieval-theme');
+            localStorage.setItem('medieval_theme', isActive);
+
+            // Forzar re-render de Home si estamos ahí
+            if (currentView === 'home') {
+                renderHome();
+            }
+
+            showToast(isActive ? '🏰 Modo Manuscrito activado' : '📱 Modo Moderno restaurado');
+        }
     </script>
 </body>
 
