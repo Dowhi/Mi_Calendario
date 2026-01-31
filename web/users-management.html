@@ -488,7 +488,7 @@
             GESTIÓN DE USUARIOS
             <span id="firebaseStatusDot" class="firebase-status" title="Desconectado"></span>
         </div>
-        <div class="header-action" style="visibility: hidden;"></div>
+        <button class="header-arrow" onclick="forceRefresh()" title="Refrescar App" style="font-size: 18px;">🔄</button>
     </div>
 
     <!-- Main Content -->
@@ -1150,6 +1150,20 @@
         // Volver al calendario
         function goBack() {
             window.location.href = 'calendar.html';
+        }
+
+        // Forzar actualización total (limpiar caché y SW)
+        async function forceRefresh() {
+            if (confirm('¿Quieres refrescar la aplicación para cargar la última versión?')) {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                localStorage.removeItem('users'); // Opcional: limpiar caché local de usuarios para forzar recarga de Firebase
+                window.location.reload(true);
+            }
         }
 
         // Inicializar
