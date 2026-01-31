@@ -2979,24 +2979,6 @@
             <div id="modernThreeWeekCalendar" class="glass-card mini-calendar-container">
                 <!-- Se carga dinámicamente -->
             </div>
-            <div class="quick-actions-grid" style="margin-top: 16px;">
-                <button class="action-icon-btn" onclick="openDayModal(new Date())">
-                    <span class="action-emoji">➕</span>
-                    <span class="action-label">Nuevo</span>
-                </button>
-                <button class="action-icon-btn" onclick="activatePaintMode()">
-                    <span class="action-emoji">🎨</span>
-                    <span class="action-label">Pintar</span>
-                </button>
-                <button class="action-icon-btn" onclick="showTab('calendar')">
-                    <span class="action-emoji">📅</span>
-                    <span class="action-label">Mes</span>
-                </button>
-                <button class="action-icon-btn" onclick="showTab('summary')">
-                    <span class="action-emoji">📊</span>
-                    <span class="action-label">Resumen</span>
-                </button>
-            </div>
         </section>
     </div>
 
@@ -3900,17 +3882,26 @@
             // Avatar Moderno
             const avatarEl = document.getElementById('modernUserAvatar');
             if (avatarEl) {
-                if (user.avatarType === 'photo' && user.avatar) {
+                console.log('👤 Depurando Avatar:', {
+                    name: userName,
+                    type: user.avatarType,
+                    avatarLength: user.avatar ? user.avatar.length : 0,
+                    isPhoto: user.avatarType === 'photo'
+                });
+
+                if (user.avatarType === 'photo' && user.avatar && user.avatar.length > 50) {
                     avatarEl.textContent = '';
                     avatarEl.style.backgroundImage = `url('${user.avatar}')`;
                     avatarEl.style.backgroundSize = 'cover';
                     avatarEl.style.backgroundPosition = 'center';
                     avatarEl.style.border = '2px solid #5c6bc0';
+                    console.log('✅ Aplicando foto de perfil');
                 } else {
                     avatarEl.textContent = user.avatar || userName.charAt(0).toUpperCase();
                     avatarEl.style.background = `linear-gradient(45deg, ${user.color || '#3f51b5'}, #5c6bc0)`;
                     avatarEl.style.backgroundImage = 'none';
                     avatarEl.style.border = 'none';
+                    console.log('ℹ️ Aplicando emoji o inicial');
                 }
             }
 
@@ -4045,82 +4036,54 @@
             const container = document.getElementById('modernThreeWeekCalendar');
             if (!container) return;
 
+            console.log('📜 Renderizando agenda moderna de 3 semanas (Estilo Mes)...');
             container.innerHTML = '';
 
-            // Header con días de la semana
-            const weekDays = getWeekDays();
-            const headerRow = document.createElement('div');
-            headerRow.className = 'mini-week-row';
-            weekDays.forEach(day => {
-                const dayHeader = document.createElement('div');
-                dayHeader.className = 'mini-day-header';
-                dayHeader.textContent = day;
-                headerRow.appendChild(dayHeader);
+            // Forzar layout de grid similar al del mes
+            container.style.display = 'grid';
+            container.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            container.style.gap = '1px';
+            container.style.backgroundColor = 'var(--border-color, #ddd)';
+            container.style.border = '1px solid var(--border-color, #ddd)';
+            container.style.borderRadius = '8px';
+            container.style.overflow = 'hidden';
+
+            const days = getWeekDays();
+            days.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'weekday-header';
+                header.style.fontSize = '10px';
+                header.style.padding = '4px 0';
+                header.style.backgroundColor = 'var(--bg-color, #fff)';
+                header.textContent = day;
+                container.appendChild(header);
             });
-            container.appendChild(headerRow);
 
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Calcular inicio (lunes de la semana pasada)
-            const startOfRange = new Date(today);
+            // Calcular lunes de la semana pasada
             const dayOfWeek = today.getDay();
             const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
-            startOfRange.setDate(today.getDate() - diffToMonday - 7); // Retroceder a lunes pasado
+            const startOfRange = new Date(today);
+            startOfRange.setDate(today.getDate() - diffToMonday - 7);
 
-            // Generar 3 semanas (21 días)
-            for (let w = 0; w < 3; w++) {
-                const weekRow = document.createElement('div');
-                weekRow.className = 'mini-week-row';
+            // Generar 21 días (3 semanas)
+            for (let i = 0; i < 21; i++) {
+                const date = new Date(startOfRange);
+                date.setDate(startOfRange.getDate() + i);
 
-                for (let d = 0; d < 7; d++) {
-                    const currentDay = new Date(startOfRange);
-                    currentDay.setDate(startOfRange.getDate() + (w * 7) + d);
+                const isOtherMonth = date.getMonth() !== today.getMonth();
 
-                    const isToday = currentDay.getTime() === today.getTime();
-                    const isOtherMonth = currentDay.getMonth() !== today.getMonth();
+                // Reutilizamos renderDay para obtener EXACTAMENTE el mismo diseño
+                renderDay(container, date, isOtherMonth);
 
-                    const cell = document.createElement('div');
-                    cell.className = `mini-day-cell ${isToday ? 'today' : ''} ${isOtherMonth ? 'other-month' : ''}`;
-                    cell.onclick = () => {
-                        currentDate = new Date(currentDay);
-                        showTab('calendar');
-                        renderCalendar();
-                    };
-
-                    cell.innerHTML = `<span class="mini-day-number">${currentDay.getDate()}</span>`;
-
-                    // Indicadores (turnos y eventos)
-                    const indicators = document.createElement('div');
-                    indicators.className = 'mini-day-indicators';
-
-                    // Obtener eventos sincrónicamente del caché
-                    const dayEvents = getEventsForDateCached(currentDay);
-
-                    // Mostrar turnos como barras de color
-                    const shifts = dayEvents.filter(e => e.type !== 'note');
-                    shifts.forEach(s => {
-                        const shiftColor = s.color || getUserColor(s.userId);
-                        const shiftBar = document.createElement('div');
-                        shiftBar.className = 'mini-indicator-shift';
-                        shiftBar.style.backgroundColor = shiftColor;
-                        indicators.appendChild(shiftBar);
-                    });
-
-                    // Mostrar notas como puntos
-                    const notes = dayEvents.filter(e => e.type === 'note');
-                    notes.forEach(n => {
-                        const noteColor = n.userColor || getUserColor(n.userId);
-                        const dot = document.createElement('div');
-                        dot.className = 'mini-indicator-dot';
-                        dot.style.backgroundColor = noteColor;
-                        indicators.appendChild(dot);
-                    });
-
-                    cell.appendChild(indicators);
-                    weekRow.appendChild(cell);
-                }
-                container.appendChild(weekRow);
+                // Ajuste post-render para el mini-calendario
+                const cell = container.lastElementChild;
+                cell.style.minHeight = '120px'; // Un poco más alto para ver texto de notas
+                cell.style.maxHeight = '150px';
+                cell.style.overflow = 'hidden';
+                cell.style.backgroundColor = isOtherMonth ? 'rgba(0,0,0,0.03)' : '#fff';
             }
         }
 
@@ -5208,14 +5171,25 @@
             }
         }
 
-        // Renderizar un día
+        // Renderizar un día (reutilizable)
         function renderDay(container, date, isOtherMonth) {
             const dayEl = document.createElement('div');
             dayEl.className = 'calendar-day';
-            dayEl.dataset.date = date.toISOString(); // Guardar la fecha en dataset para acceso desde fuera
+            dayEl.dataset.date = date.toISOString();
+
+            populateDayCell(dayEl, date, isOtherMonth);
+
+            container.appendChild(dayEl);
+        }
+
+        // Función central para poblar una celda de día (Mes, Inicio, etc.)
+        function populateDayCell(dayEl, date, isOtherMonth) {
+            dayEl.innerHTML = ''; // Limpiar previo
 
             if (isOtherMonth) {
                 dayEl.classList.add('other-month');
+            } else {
+                dayEl.classList.remove('other-month');
             }
 
             // Marcar día actual
@@ -5277,7 +5251,11 @@
             }
 
             dayEl.appendChild(eventsEl);
+            populateDayCellContent(dayEl, date, events);
+        }
 
+        function populateDayCellContent(dayEl, date, events) {
+            const numberEl = dayEl.querySelector('.day-number');
             // Aplicar el nuevo estilo de visualización
             const shifts = events
                 .filter(event => event.type !== 'note' && event.type !== 'recurring')
