@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Gestión de Usuarios - Mi Calendario</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f5f5f5;
+            overflow-x: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: #1B5E20;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .firebase-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #FF5252;
+            margin-left: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: inline-block;
+        }
+
+        .firebase-status.connected {
+            background: #4CAF50;
+            box-shadow: 0 0 5px #4CAF50;
+        }
+
+        .header-arrow {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+            margin: 0 16px;
+        }
+
+        .header-action {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 12px;
+        }
+
+        .instruction-text {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        /* User Profile Card */
+        .user-profile-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-name-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .user-name-input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .color-preview {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 2px solid #e0e0e0;
+        }
+
+        .user-name-input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+        }
+
+        .user-name-input:focus {
+            border-color: #1B5E20;
+        }
+
+        .color-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        /* Color Picker con Scroll */
+        .color-picker-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .color-picker-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            position: relative;
+        }
+
+        .color-wheel-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid #e0e0e0;
+            background: conic-gradient(from 180deg, red, yellow, lime, cyan, blue, magenta, red);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .color-wheel-inner {
+            width: 12px;
+            height: 12px;
+            background-color: white;
+            border-radius: 50%;
+        }
+
+        .color-scroll-arrow {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .color-scroll-arrow:hover:not(:disabled) {
+            color: #666;
+        }
+
+        .color-scroll-arrow:disabled {
+            color: #ddd;
+            cursor: not-allowed;
+        }
+
+        .color-scroll-container {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            padding: 2px 4px;
+        }
+
+        .color-scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .color-picker-row {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .color-option {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.1s;
+            position: relative;
+            flex-shrink: 0;
+            display: inline-block;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: #333;
+        }
+
+        .color-option.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        .check-icon {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 14px;
+            height: 14px;
+            background: #4CAF50;
+            border-radius: 50%;
+            border: 1.5px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .check-icon svg {
+            width: 8px;
+            height: 8px;
+            color: white;
+        }
+
+        /* Footer Button */
+        .footer {
+            background: white;
+            padding: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .save-button {
+            width: 100%;
+            background: #1B5E20;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .save-button:active {
+            background: #2E7D32;
+        }
+
+        .save-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* ===== AVATAR SYSTEM v8 ===== */
+
+        /* Avatar Section */
+        .avatar-section {
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .avatar-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1B5E20;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Avatar Preview */
+        .avatar-preview-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .avatar-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            border: 3px solid #1B5E20;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .avatar-preview:hover {
+            transform: scale(1.05);
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Avatar Emoji Selector */
+        .avatar-emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .avatar-emoji-option {
+            aspect-ratio: 1;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            background: #ffffff;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 8px;
+        }
+
+        .avatar-emoji-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-color: #1B5E20;
+        }
+
+        .avatar-emoji-option.selected {
+            background: #e8f5e9;
+            border-color: #1B5E20;
+            border-width: 3px;
+        }
+
+        .avatar-emoji-option:active {
+            transform: scale(0.95);
+        }
+
+        /* Upload Button */
+        .avatar-upload-container {
+            margin-top: 12px;
+        }
+
+        .avatar-upload-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .avatar-upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+        }
+
+        .avatar-upload-btn:active {
+            transform: scale(0.97);
+        }
+
+        .avatar-upload-input {
+            display: none;
+        }
+
+        /* Avatar Type Tabs */
+        .avatar-type-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            background: #f0f0f0;
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .avatar-type-tab {
+            flex: 1;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .avatar-type-tab.active {
+            background: white;
+            color: #1B5E20;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .avatar-content-panel {
+            display: none;
+        }
+
+        .avatar-content-panel.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <button class="header-arrow" onclick="goBack()">←</button>
+        <div class="header-title">
+            GESTIÓN DE USUARIOS
+            <span id="firebaseStatusDot" class="firebase-status" title="Desconectado"></span>
+        </div>
+        <button class="header-arrow" onclick="forceRefresh()" title="Refrescar App" style="font-size: 18px;">🔄</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="instruction-text">Personaliza los nombres y colores de los usuarios:</div>
+
+        <div id="usersContainer">
+            <!-- Se carga dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Footer Button -->
+    <div class="footer">
+        <button class="save-button" onclick="saveChanges()">
+            💾 Guardar Cambios
+        </button>
+    </div>
+
+    <script>
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5vvp7IQOZLO7LlsUY_Wq-H8M_5PH3ZQE",
+            authDomain: "apptaxi-f2190.firebaseapp.com",
+            projectId: "apptaxi-f2190",
+            storageBucket: "apptaxi-f2190.firebasestorage.app",
+            messagingSenderId: "804273724178",
+            appId: "1:804273724178:web:c5955a1f657884c0e7f1cb",
+            measurementId: "G-3D8R30TYTM"
+        };
+
+        let db = null;
+        let isFirebaseConnected = false;
+
+        // Paleta extendida de colores (igual que en shift-config)
+        const availableColors = [
+            '#F44336', // Rojo
+            '#E91E63', // Rosa
+            '#9C27B0', // Púrpura
+            '#673AB7', // Púrpura Oscuro
+            '#3F51B5', // Índigo
+            '#2196F3', // Azul
+            '#03A9F4', // Azul Claro
+            '#00BCD4', // Turquesa
+            '#009688', // Verde Azulado
+            '#4CAF50', // Verde
+            '#8BC34A', // Verde Claro
+            '#CDDC39', // Lima
+            '#FFEB3B', // Amarillo
+            '#FFC107', // Ámbar
+            '#FF9800', // Naranja
+            '#FF5722', // Naranja Oscuro
+            '#795548', // Marrón
+            '#607D8B', // Azul Gris
+            '#9E9E9E', // Gris
+            '#000000', // Negro
+            '#FFFFFF'  // Blanco
+        ];
+
+        let users = [];
+        const ITEM_WIDTH = 32 + 8; // width + gap
+
+        // Inicializar Firebase
+        async function initFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                isFirebaseConnected = true;
+                const dot = document.getElementById('firebaseStatusDot');
+                if (dot) {
+                    dot.classList.add('connected');
+                    dot.title = 'Firebase Conectado';
+                }
+                console.log('✅ Firebase conectado');
+                console.log('Firebase Config en uso:', {
+                    projectId: firebaseConfig.projectId,
+                    appId: firebaseConfig.appId,
+                    authDomain: firebaseConfig.authDomain
+                });
+                return true;
+            } catch (error) {
+                console.error('❌ Error conectando Firebase:', error);
+                isFirebaseConnected = false;
+                const dot = document.getElementById('firebaseStatusDot');
+                if (dot) {
+                    dot.classList.remove('connected');
+                    dot.title = 'Error de conexión: ' + error.message;
+                }
+                return false;
+            }
+        }
+
+        // Cargar usuarios
+        async function loadUsers() {
+            // Intentar cargar desde localStorage primero para rapidez y como fallback
+            const localUsers = localStorage.getItem('users');
+            if (localUsers) {
+                try {
+                    users = JSON.parse(localUsers);
+                    console.log('📦 Usuarios cargados desde localStorage (caché)');
+                } catch (e) {
+                    console.error('Error parseando usuarios de localStorage:', e);
+                }
+            }
+
+            if (isFirebaseConnected) {
+                try {
+                    const snapshot = await db.collection('users').get();
+                    const firebaseUsers = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: String(doc.id),
+                            name: data.name || `Usuario ${doc.id}`,
+                            color: data.color || '#9E9E9E',
+                            userId: parseInt(doc.id) || 0,
+                            avatar: data.avatar || '👤',
+                            avatarType: data.avatarType || 'emoji'
+                        };
+                    });
+
+                    if (firebaseUsers.length > 0) {
+                        users = firebaseUsers;
+                        // Sincronizar con localStorage
+                        localStorage.setItem('users', JSON.stringify(users));
+                        console.log('✅ Usuarios sincronizados desde Firebase');
+                    } else if (users.length === 0) {
+                        // Si no hay nada en Firebase ni en local
+                        users = getDefaultUsers();
+                        await saveUsersToFirebase();
+                    }
+                } catch (error) {
+                    console.error('❌ Error cargando usuarios de Firebase:', error);
+                    if (users.length === 0) {
+                        users = getDefaultUsers();
+                    }
+                }
+            } else if (users.length === 0) {
+                users = getDefaultUsers();
+            }
+
+            // Limpiar y normalizar datos de usuarios
+            users = users.map((user, index) => {
+                // Asegurar que ID sea un string válido
+                let id = user.id;
+                if (!id || typeof id === 'object') {
+                    id = String(index + 1);
+                } else {
+                    id = String(id);
+                }
+
+                // Asegurar que userId sea un número
+                let userId = user.userId;
+                if (!userId || typeof userId === 'object') {
+                    userId = parseInt(id) || (index + 1);
+                } else {
+                    userId = parseInt(userId);
+                }
+
+                return {
+                    id: id,
+                    name: String(user.name || `Usuario ${id}`),
+                    color: String(user.color || '#9E9E9E'),
+                    userId: userId,
+                    avatar: user.avatar || '👤',
+                    avatarType: user.avatarType || 'emoji'
+                };
+            });
+
+            renderUsers();
+            setupScrollListeners();
+        }
+
+        // Usuarios por defecto
+        function getDefaultUsers() {
+            return [
+                { id: '1', name: 'Juan Carlos', color: '#2196F3', userId: 1 },
+                { id: '2', name: 'Carmen', color: '#4CAF50', userId: 2 },
+                { id: '3', name: 'María', color: '#FF9800', userId: 3 },
+                { id: '4', name: 'Pedro', color: '#9C27B0', userId: 4 }
+            ];
+        }
+
+        // Renderizar usuarios
+        function renderUsers() {
+            const container = document.getElementById('usersContainer');
+            container.innerHTML = '';
+
+            users.forEach((user, index) => {
+                const card = document.createElement('div');
+                card.className = 'user-profile-card';
+
+                const userNumber = index + 1;
+
+                // Determinar avatar a mostrar
+                const avatarDisplay = user.avatarType === 'photo' && user.avatar
+                    ? `<img src="${user.avatar}" alt="Avatar"/>`
+                    : user.avatar || '👤';
+
+                card.innerHTML = `
+                    <div class="user-name-label">Nombre del Usuario ${userNumber}</div>
+                    
+                    <!-- Avatar Section -->
+                    <div class="avatar-section">
+                        <div class="avatar-label">🎭 Avatar del Usuario</div>
+                        
+                        <!-- Avatar Preview -->
+                        <div class="avatar-preview-container">
+                            <div class="avatar-preview" id="avatarPreview${user.id}">
+                                ${avatarDisplay}
+                            </div>
+                        </div>
+                        
+                        <!-- Avatar Type Tabs -->
+                        <div class="avatar-type-tabs">
+                            <button class="avatar-type-tab active" onclick="switchAvatarTab('${user.id}', 'emoji')" id="emojiTab${user.id}">
+                                😊 Caritas
+                            </button>
+                            <button class="avatar-type-tab" onclick="switchAvatarTab('${user.id}', 'photo')" id="photoTab${user.id}">
+                                📷 Foto
+                            </button>
+                        </div>
+                        
+                        <!-- Emoji Panel -->
+                        <div class="avatar-content-panel active" id="emojiPanel${user.id}">
+                            <div class="avatar-emoji-grid">
+                                ${renderEmojiOptions(user)}
+                            </div>
+                        </div>
+                        
+                        <!-- Photo Upload Panel -->
+                        <div class="avatar-content-panel" id="photoPanel${user.id}">
+                            <div class="avatar-upload-container">
+                                <input 
+                                    type="file" 
+                                    id="fileInput${user.id}" 
+                                    class="avatar-upload-input" 
+                                    accept="image/*"
+                                    onchange="handlePhotoUpload('${user.id}', event)"
+                                />
+                                <button class="avatar-upload-btn" onclick="document.getElementById('fileInput${user.id}').click()">
+                                    📷 Subir Foto desde Galería
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="user-name-input-container">
+                        <div class="color-preview" style="background-color: ${user.color}" id="colorPreview${user.id}"></div>
+                        <input 
+                            type="text" 
+                            class="user-name-input" 
+                            id="nameInput${user.id}"
+                            value="${user.name}"
+                            placeholder="Nombre del usuario"
+                        >
+                    </div>
+                    <div class="color-label">Color:</div>
+                    <div class="color-picker-container">
+                        <div class="color-picker-wrapper">
+                            <div class="color-wheel-icon">
+                                <div class="color-wheel-inner"></div>
+                            </div>
+                            
+                            <button 
+                                class="color-scroll-arrow" 
+                                onclick="scrollColorPicker('${user.id}', -1)"
+                                id="arrowLeft${user.id}"
+                                aria-label="Anterior color"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+
+                            <div 
+                                class="color-scroll-container" 
+                                id="colorScroll${user.id}"
+                            >
+                                <div class="color-picker-row">
+                                    ${renderColorOptions(user)}
+                                </div>
+                            </div>
+
+                            <button 
+                                class="color-scroll-arrow" 
+                                onclick="scrollColorPicker('${user.id}', 1)"
+                                id="arrowRight${user.id}"
+                                aria-label="Siguiente color"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+
+                // Agregar event listener para el input
+                document.getElementById(`nameInput${user.id}`).addEventListener('input', (e) => {
+                    updateUserName(user.id, e.target.value);
+                });
+            });
+        }
+
+        // Renderizar opciones de color
+        function renderColorOptions(user) {
+            const usedColors = users.filter(u => u.id !== user.id).map(u => u.color);
+
+            return availableColors.map((color) => {
+                const isSelected = user.color === color;
+                const isDisabled = usedColors.includes(color);
+
+                let borderStyle = '';
+                if (color === '#FFFFFF' || color === '#000000') {
+                    borderStyle = 'border: 1px solid #ddd;';
+                }
+
+                return `
+                    <button
+                        class="color-option ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}"
+                        style="background-color: ${color}; ${borderStyle}"
+                        onclick="${!isDisabled ? `selectColor('${user.id}', '${color}')` : 'return false;'}"
+                        data-color="${color}"
+                        ${isDisabled ? 'disabled' : ''}
+                    >
+                        ${isSelected ? `
+                            <div class="check-icon">
+                                <svg viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        ` : ''}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Scroll del picker de colores
+        function scrollColorPicker(userId, direction) {
+            const container = document.getElementById(`colorScroll${userId}`);
+            if (!container) return;
+
+            const scrollAmount = direction * (3 * ITEM_WIDTH); // Scroll 3 colores a la vez
+            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+
+        // Configurar listeners de scroll
+        function setupScrollListeners() {
+            users.forEach(user => {
+                const container = document.getElementById(`colorScroll${user.id}`);
+                const leftArrow = document.getElementById(`arrowLeft${user.id}`);
+                const rightArrow = document.getElementById(`arrowRight${user.id}`);
+
+                if (container) {
+                    const handleScroll = () => {
+                        const { scrollLeft, scrollWidth, clientWidth } = container;
+                        leftArrow.disabled = scrollLeft === 0;
+                        rightArrow.disabled = scrollLeft >= scrollWidth - clientWidth - 1;
+                    };
+
+                    container.addEventListener('scroll', handleScroll);
+                    handleScroll(); // Estado inicial
+                }
+            });
+        }
+
+        // Seleccionar color
+        function selectColor(userId, color) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            // Verificar que el color no esté en uso
+            const usedByOther = users.find(u => u.id !== userId && u.color === color);
+            if (usedByOther) {
+                alert('Este color ya está siendo usado por otro usuario');
+                return;
+            }
+
+            // Actualizar el color
+            user.color = color;
+
+            // Actualizar la vista
+            const preview = document.getElementById(`colorPreview${userId}`);
+            if (preview) {
+                preview.style.backgroundColor = color;
+            }
+
+            // Re-renderizar TODOS los usuarios para actualizar la disponibilidad de colores
+            renderUsers();
+            setupScrollListeners();
+        }
+
+        // Actualizar nombre de usuario
+        function updateUserName(userId, name) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.name = name;
+            }
+        }
+
+        // Guardar cambios
+        async function saveChanges() {
+            const button = document.querySelector('.save-button');
+            button.disabled = true;
+            button.textContent = '💾 Guardando...';
+
+            try {
+                // Capturar los nombres de los inputs antes de guardar
+                users.forEach(user => {
+                    const input = document.getElementById(`nameInput${user.id}`);
+                    if (input) {
+                        user.name = input.value.trim() || user.name;
+                    }
+                });
+
+                // Siempre guardar en localStorage primero para asegurar persistencia local inmediata
+                localStorage.setItem('users', JSON.stringify(users));
+                console.log('💾 Usuarios guardados en localStorage');
+
+                if (isFirebaseConnected) {
+                    await saveUsersToFirebase();
+                    console.log('✅ Usuarios guardados en Firebase');
+                }
+
+                button.textContent = '✅ Guardado';
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.textContent = '💾 Guardar Cambios';
+                }, 1000);
+
+                setTimeout(() => {
+                    window.location.href = 'calendar.html';
+                }, 1500);
+            } catch (error) {
+                console.error('❌ Error guardando cambios:', error);
+                button.textContent = '❌ Error';
+                button.style.background = '#F44336';
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.textContent = '💾 Guardar Cambios';
+                    button.style.background = '#1B5E20';
+                }, 2000);
+            }
+        }
+
+        // Guardar usuarios en Firebase
+        async function saveUsersToFirebase() {
+            if (!isFirebaseConnected) return;
+
+            try {
+                console.log('📤 Guardando usuarios:', users);
+
+                for (const user of users) {
+                    // Validar y normalizar el ID
+                    let docId = user.id;
+                    if (!docId || typeof docId !== 'string') {
+                        console.warn('⚠️ ID inválido, usando índice:', user);
+                        docId = String(users.indexOf(user) + 1);
+                    } else {
+                        docId = String(docId);
+                    }
+
+                    // Validar y preparar datos (ahora incluye avatar)
+                    const userData = {
+                        name: String(user.name || `Usuario ${docId}`),
+                        color: String(user.color || '#9E9E9E'),
+                        userId: parseInt(user.userId) || parseInt(docId),
+                        avatar: user.avatar || '👤',
+                        avatarType: user.avatarType || 'emoji'
+                    };
+
+                    console.log(`💾 Guardando usuario ${docId}:`, userData);
+                    await db.collection('users').doc(docId).set(userData);
+                    console.log(`✅ Usuario ${docId} guardado correctamente`);
+                }
+                console.log('✅ Todos los usuarios guardados en Firebase');
+            } catch (error) {
+                console.error('❌ Error guardando usuarios:', error);
+                alert('Error al guardar en Firebase: ' + error.message);
+                console.error('Datos de usuarios:', users);
+                throw error;
+            }
+        }
+
+        // ===== AVATAR SYSTEM FUNCTIONS v8 =====
+
+        // Predefined emoji avatars
+        const defaultAvatars = [
+            '😊', '😎', '🥳', '🤓', '😇', '🤗',
+            '👨', '👩', '👦', '👧', '👴', '👵'
+        ];
+
+        // Renderizar opciones de emoji
+        function renderEmojiOptions(user) {
+            return defaultAvatars.map(emoji => {
+                const isSelected = user.avatar === emoji && user.avatarType === 'emoji';
+                const selectedClass = isSelected ? 'selected' : '';
+
+                return `
+                    <div class="avatar-emoji-option ${selectedClass}" onclick="selectEmoji('${user.id}', '${emoji}')">
+                        ${emoji}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Cambiar entre tabs de avatar
+        function switchAvatarTab(userId, tabType) {
+            // Update tabs
+            const emojiTab = document.getElementById(`emojiTab${userId}`);
+            const photoTab = document.getElementById(`photoTab${userId}`);
+
+            if (tabType === 'emoji') {
+                emojiTab.classList.add('active');
+                photoTab.classList.remove('active');
+            } else {
+                photoTab.classList.add('active');
+                emojiTab.classList.remove('active');
+            }
+
+            // Update panels
+            const emojiPanel = document.getElementById(`emojiPanel${userId}`);
+            const photoPanel = document.getElementById(`photoPanel${userId}`);
+
+            if (tabType === 'emoji') {
+                emojiPanel.classList.add('active');
+                photoPanel.classList.remove('active');
+            } else {
+                photoPanel.classList.add('active');
+                emojiPanel.classList.remove('active');
+            }
+        }
+
+        // Seleccionar emoji como avatar
+        function selectEmoji(userId, emoji) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            user.avatar = emoji;
+            user.avatarType = 'emoji';
+
+            updateAvatarPreview(userId);
+            renderUsers();
+            setupScrollListeners();
+        }
+
+        // Manejar subida de foto
+        async function handlePhotoUpload(userId, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validar que sea imagen
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor selecciona un archivo de imagen');
+                return;
+            }
+
+            try {
+                // Opcional: guardar el icono para mostrar que está subiendo
+                const user = users.find(u => u.id === userId);
+                if (!user) return;
+
+                // Resize image to 200x200 using Canvas
+                const resizedDataUrl = await resizeImage(file, 200, 200);
+
+                // Actualizar usuario
+                user.avatar = resizedDataUrl; // Por ahora usamos data URL, luego implementaremos Firebase Storage
+                user.avatarType = 'photo';
+
+                updateAvatarPreview(userId);
+
+                alert('✅ Foto cargada correctamente');
+            } catch (error) {
+                console.error('Error subiendo foto:', error);
+                alert('❌ Error al cargar la foto');
+            }
+        }
+
+        // Redimensionar imagen usando Canvas
+        function resizeImage(file, maxWidth, maxHeight) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    const img = new Image();
+
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Calculate new dimensions
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = height * (maxWidth / width);
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = width * (maxHeight / height);
+                                height = maxHeight;
+                            }
+                        }
+
+                        canvas.width = maxWidth;
+                        canvas.height = maxHeight;
+
+                        const ctx = canvas.getContext('2d');
+
+                        // Fill with white background
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, maxWidth, maxHeight);
+
+                        // Center the image
+                        const x = (maxWidth - width) / 2;
+                        const y = (maxHeight - height) / 2;
+
+                        ctx.drawImage(img, x, y, width, height);
+
+                        // Convert to WebP or fallback to JPEG
+                        const dataUrl = canvas.toDataURL('image/webp', 0.8);
+                        resolve(dataUrl);
+                    };
+
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Actualizar nombre del usuario en el array local
+        function updateUserName(userId, name) {
+            console.log(`✍️ Actualizando nombre para usuario ${userId}: ${name}`);
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.name = name;
+            }
+        }
+
+        // Actualizar preview del avatar
+        function updateAvatarPreview(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            const preview = document.getElementById(`avatarPreview${userId}`);
+            if (!preview) return;
+
+            if (user.avatarType === 'photo' && user.avatar) {
+                preview.innerHTML = `<img src="${user.avatar}" alt="Avatar"/>`;
+            } else {
+                preview.innerHTML = user.avatar || '👤';
+            }
+        }
+
+        // Volver al calendario
+        function goBack() {
+            window.location.href = 'calendar.html';
+        }
+
+        // Forzar actualización total (limpiar caché y SW)
+        async function forceRefresh() {
+            if (confirm('¿Quieres refrescar la aplicación para cargar la última versión?')) {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                localStorage.removeItem('users'); // Opcional: limpiar caché local de usuarios para forzar recarga de Firebase
+                window.location.reload(true);
+            }
+        }
+
+        // Inicializar
+        async function init() {
+            await initFirebase();
+            await loadUsers();
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+
+</html>
