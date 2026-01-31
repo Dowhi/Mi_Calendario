@@ -4852,7 +4852,7 @@
                             // Si no tiene lista visibleTo y no es privada, no mostrar a nadie (excepto al autor)
                             // Esto asegura que solo los usuarios explícitamente seleccionados puedan ver la nota
                             if (note.userId !== currentUserId) {
-                                return; // Omitir si no es el autor y no tiene visibleTo
+                                // return; // Omitir si no es el autor y no tiene visibleTo
                             }
                         }
                     }
