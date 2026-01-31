@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="FamilySync">
+    <meta name="apple-mobile-web-app-title" content="Mi Calendario">
     <meta name="theme-color" content="#1B5E20">
-    <title>Vista Semanal - FamilySync</title>
+    <title>Vista Semanal - Mi Calendario</title>
     <link rel="apple-touch-icon" href="icons/Icon-192.png">
-    
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
+
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
+
     <style>
         * {
             margin: 0;
@@ -26,7 +27,8 @@
             -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             width: 100%;
             overflow: hidden;
@@ -45,7 +47,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .nav-btn {
@@ -76,7 +78,7 @@
             padding: 8px 12px;
             display: flex;
             gap: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .view-btn {
@@ -174,7 +176,7 @@
             overflow: hidden;
             cursor: pointer;
             z-index: 1;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .event-block.shift {
@@ -395,7 +397,7 @@
             background: white;
             margin: 20px auto;
             padding: 12mm;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             font-family: 'Arial', sans-serif;
             color: #333;
         }
@@ -494,6 +496,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Header -->
     <div class="header">
@@ -501,7 +504,7 @@
         <div class="header-title" id="weekTitle"></div>
         <div style="width: 80px;"></div>
     </div>
-    
+
     <!-- Navigation Arrows -->
     <div class="header" style="padding: 4px 12px; background: #2196F3; justify-content: center;">
         <button class="nav-btn" onclick="previousWeek()">‹</button>
@@ -572,7 +575,7 @@
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
                 console.log('✅ Firebase inicializado');
-                
+
                 loadShiftTemplates();
                 loadWeekEvents();
                 db.collection('calendar_events').onSnapshot(loadWeekEvents);
@@ -610,10 +613,10 @@
                     }
                 });
             }
-            
+
             document.getElementById('weekGrid').style.display = view === 'grid' ? 'grid' : 'none';
             document.getElementById('agendaView').classList.toggle('show', view === 'agenda');
-            
+
             renderView();
         }
 
@@ -621,13 +624,13 @@
             try {
                 const snapshot = await db.collection('calendar_events').get();
                 events = {};
-                
+
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const dayEvents = data.events || [];
                     events[doc.id] = dayEvents;
                 });
-                
+
                 renderView();
             } catch (error) {
                 console.error('Error cargando eventos:', error);
@@ -649,7 +652,7 @@
         function updateTotalEvents(includeShifts = false) {
             const weekDays = getWeekDays(currentWeek);
             let total = 0;
-            
+
             weekDays.forEach(day => {
                 const dateKey = formatDateKey(day);
                 const dayEvents = events[dateKey] || [];
@@ -664,20 +667,20 @@
                     total += dayEvents.filter(evt => evt.type !== 'shift' && !evt.shiftId && !evt.shiftName).length;
                 }
             });
-            
+
             document.getElementById('totalEvents').textContent = total;
         }
 
         function renderGridView() {
             const container = document.getElementById('weekGrid');
-            
+
             // Calcular días de la semana
             const weekDays = getWeekDays(currentWeek);
             // Mostrar horas desde las 6:00 hasta las 23:00
             const hours = Array.from({ length: 18 }, (_, i) => i + 6);
-            
+
             let html = '<div class="week-grid-header"></div>';
-            
+
             // Headers de días
             weekDays.forEach(day => {
                 const isToday = isSameDay(day, new Date());
@@ -686,11 +689,11 @@
                     <span class="day-name">${getDayName(day)}</span>
                 </div>`;
             });
-            
+
             // Filas de horas (desde las 6:00)
             hours.forEach(hour => {
                 html += `<div class="time-column">${hour}:00</div>`;
-                
+
                 weekDays.forEach(day => {
                     const dateKey = formatDateKey(day);
                     const dayEvents = events[dateKey] || [];
@@ -704,7 +707,7 @@
                         const [h] = evt.time.split(':');
                         return parseInt(h) === hour;
                     });
-                    
+
                     html += `<div class="time-slot">
                         ${hourEvents.map(evt => `<div class="event-block ${evt.type}" style="top: ${calculateTop(evt.time)}px">
                             ${evt.text?.substring(0, 15) || 'Evento'}
@@ -712,22 +715,22 @@
                     </div>`;
                 });
             });
-            
+
             container.innerHTML = html;
         }
 
         function renderAgendaView() {
             const container = document.getElementById('agendaView');
             const weekDays = getWeekDays(currentWeek);
-            
+
             let html = '';
             let totalEvents = 0;
-            
+
             weekDays.forEach(day => {
                 const dateKey = formatDateKey(day);
                 const dayEvents = events[dateKey] || [];
                 const isToday = isSameDay(day, new Date());
-                
+
                 // Filtrar turnos - solo mostrar notas con hora en Agenda
                 // Excluir: turnos por tipo, shiftId, shiftName, o eventos sin hora que sean muy cortos (probablemente turnos)
                 const notesOnly = dayEvents.filter(evt => {
@@ -740,24 +743,24 @@
                     if (!evt.time && text.length <= 3) return false;
                     return true;
                 });
-                
+
                 if (notesOnly.length === 0) return;
-                
+
                 totalEvents += notesOnly.length;
-                
+
                 html += `<div class="agenda-day">
                     <div class="agenda-day-header ${isToday ? 'today' : ''}">
                         ${formatDayHeader(day)}
                     </div>`;
-                
+
                 notesOnly.forEach(evt => {
                     const badgeClass = 'badge-note';
                     // Solo mostrar hora si existe, no mostrar "Todo el día"
                     const timeDisplay = evt.time || '';
-                    
+
                     // Buscar nombre completo del turno si existe
                     let title = evt.text?.substring(0, 50) || 'Evento';
-                    
+
                     html += `<div class="agenda-event">
                         <div class="agenda-time">${timeDisplay}</div>
                         <div class="agenda-content">
@@ -767,17 +770,17 @@
                         </div>
                     </div>`;
                 });
-                
+
                 html += '</div>';
             });
-            
+
             if (html === '') {
                 html = `<div class="empty-state">
                     <div class="empty-state-icon">📭</div>
                     <div class="empty-state-text">No hay notas esta semana</div>
                 </div>`;
             }
-            
+
             container.innerHTML = html;
             document.getElementById('totalEvents').textContent = totalEvents;
         }
@@ -786,13 +789,13 @@
             const days = [];
             const start = new Date(weekStart);
             start.setDate(start.getDate() - start.getDay()); // Domingo
-            
+
             for (let i = 0; i < 7; i++) {
                 const day = new Date(start);
                 day.setDate(start.getDate() + i);
                 days.push(day);
             }
-            
+
             return days;
         }
 
@@ -817,8 +820,8 @@
 
         function isSameDay(d1, d2) {
             return d1.getDate() === d2.getDate() &&
-                   d1.getMonth() === d2.getMonth() &&
-                   d1.getFullYear() === d2.getFullYear();
+                d1.getMonth() === d2.getMonth() &&
+                d1.getFullYear() === d2.getFullYear();
         }
 
         function calculateTop(time) {
@@ -844,11 +847,11 @@
             const weekDays = getWeekDays(currentWeek);
             const start = weekDays[0];
             const end = weekDays[6];
-            
-            document.getElementById('weekTitle').textContent = 
-                `${start.getDate()}/${start.getMonth()+1} - ${end.getDate()}/${end.getMonth()+1}`;
-            
-            document.getElementById('weekRange').textContent = 
+
+            document.getElementById('weekTitle').textContent =
+                `${start.getDate()}/${start.getMonth() + 1} - ${end.getDate()}/${end.getMonth() + 1}`;
+
+            document.getElementById('weekRange').textContent =
                 `Semana ${getWeekNumber(currentWeek)}`;
         }
 
@@ -868,23 +871,23 @@
             const weekDays = getWeekDays(currentWeek);
             const start = weekDays[0];
             const end = weekDays[6];
-            
+
             // Generar contenido del resumen - usar la misma lógica de filtrado
             let totalNotes = 0;
             let hasContent = false;
-            
+
             // Generar HTML visual que simula el PDF en A4
             let previewHtml = '<div class="pdf-preview-page">';
-            
+
             // Título
             previewHtml += '<div class="pdf-preview-title">RESUMEN SEMANAL</div>';
-            
+
             // Meta información
-            previewHtml += `<div class="pdf-preview-meta">Semana ${getWeekNumber(currentWeek)} | ${start.getDate()}/${start.getMonth()+1}/${start.getFullYear()} - ${end.getDate()}/${end.getMonth()+1}/${end.getFullYear()}</div>`;
-            
+            previewHtml += `<div class="pdf-preview-meta">Semana ${getWeekNumber(currentWeek)} | ${start.getDate()}/${start.getMonth() + 1}/${start.getFullYear()} - ${end.getDate()}/${end.getMonth() + 1}/${end.getFullYear()}</div>`;
+
             // Línea separadora
             previewHtml += '<div class="pdf-preview-divider"></div>';
-            
+
             // Contenido de notas - usar la misma lógica de filtrado
             weekDays.forEach(day => {
                 const dateKey = formatDateKey(day);
@@ -897,18 +900,18 @@
                     if (!evt.time && text.length <= 3) return false;
                     return true;
                 });
-                
+
                 if (notesOnly.length > 0) {
                     totalNotes += notesOnly.length;
                     hasContent = true;
                     const dayHeader = formatDayHeader(day);
                     previewHtml += `<div class="pdf-preview-day">`;
                     previewHtml += `<div class="pdf-preview-day-header">${dayHeader}</div>`;
-                    
+
                     notesOnly.forEach(note => {
                         const timeDisplay = note.time || '';
                         const title = note.text?.substring(0, 100) || 'Nota sin texto';
-                        
+
                         previewHtml += '<div class="pdf-preview-note">';
                         if (timeDisplay) {
                             previewHtml += `<span class="pdf-preview-note-time">${timeDisplay}</span>`;
@@ -918,20 +921,20 @@
                         }
                         previewHtml += '</div>';
                     });
-                    
+
                     previewHtml += '</div>';
                 }
             });
-            
+
             if (!hasContent) {
                 previewHtml += '<div style="padding: 20mm 0; text-align: center; color: #999;">No hay notas en esta semana.</div>';
             }
-            
+
             // Footer
             previewHtml += '<div class="pdf-preview-footer">Total: ' + totalNotes + ' notas</div>';
-            previewHtml += '<div class="pdf-preview-page-footer">FamilySync - ' + new Date().toLocaleDateString('es-ES') + '</div>';
+            previewHtml += '<div class="pdf-preview-page-footer">Mi Calendario - ' + new Date().toLocaleDateString('es-ES') + '</div>';
             previewHtml += '</div>';
-            
+
             document.getElementById('pdfPreviewContent').innerHTML = previewHtml;
             document.getElementById('pdfPreviewBackdrop').classList.add('show');
         }
@@ -948,37 +951,37 @@
                 unit: 'mm',
                 format: 'a4'
             });
-            
+
             const weekDays = getWeekDays(currentWeek);
             const start = weekDays[0];
             const end = weekDays[6];
-            
+
             // Configuración compacta y elegante
             const margin = 12;
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
             const maxWidth = pageWidth - (margin * 2);
             let yPos = margin;
-            
+
             // Título más compacto
             doc.setFontSize(14);
             doc.setFont(undefined, 'bold');
             doc.text('RESUMEN SEMANAL', margin, yPos);
             yPos += 5;
-            
+
             // Información del período más compacta
             doc.setFontSize(9);
             doc.setFont(undefined, 'normal');
             doc.setTextColor(100, 100, 100);
-            doc.text(`Semana ${getWeekNumber(currentWeek)} | ${start.getDate()}/${start.getMonth()+1}/${start.getFullYear()} - ${end.getDate()}/${end.getMonth()+1}/${end.getFullYear()}`, margin, yPos);
+            doc.text(`Semana ${getWeekNumber(currentWeek)} | ${start.getDate()}/${start.getMonth() + 1}/${start.getFullYear()} - ${end.getDate()}/${end.getMonth() + 1}/${end.getFullYear()}`, margin, yPos);
             yPos += 5;
-            
+
             // Línea separadora delgada
             doc.setLineWidth(0.2);
             doc.setTextColor(0, 0, 0);
             doc.line(margin, yPos, pageWidth - margin, yPos);
             yPos += 4;
-            
+
             // Contenido de notas - usar la misma lógica de filtrado que la vista previa
             let totalNotes = 0;
             weekDays.forEach(day => {
@@ -992,16 +995,16 @@
                     if (!evt.time && text.length <= 3) return false;
                     return true;
                 });
-                
+
                 if (notesOnly.length > 0) {
                     totalNotes += notesOnly.length;
-                    
+
                     // Verificar si necesitamos nueva página
                     if (yPos > pageHeight - 25) {
                         doc.addPage();
                         yPos = margin;
                     }
-                    
+
                     // Encabezado del día más compacto
                     doc.setFontSize(10);
                     doc.setFont(undefined, 'bold');
@@ -1009,7 +1012,7 @@
                     const dayHeader = formatDayHeader(day);
                     doc.text(dayHeader, margin, yPos);
                     yPos += 4;
-                    
+
                     // Notas del día con diseño compacto - exactamente como en la vista previa
                     doc.setFontSize(8);
                     doc.setFont(undefined, 'normal');
@@ -1020,10 +1023,10 @@
                             doc.addPage();
                             yPos = margin;
                         }
-                        
+
                         const timeDisplay = note.time || '';
                         const title = note.text?.substring(0, 100) || 'Nota sin texto';
-                        
+
                         if (timeDisplay) {
                             doc.setFont(undefined, 'bold');
                             doc.setTextColor(66, 66, 66);
@@ -1042,11 +1045,11 @@
                         }
                         yPos += 1; // Espacio mínimo entre notas
                     });
-                    
+
                     yPos += 3; // Espacio entre días
                 }
             });
-            
+
             // Total de notas compacto
             if (yPos > pageHeight - 20) {
                 doc.addPage();
@@ -1060,23 +1063,23 @@
             doc.setFontSize(9);
             doc.setFont(undefined, 'bold');
             doc.text(`Total: ${totalNotes} notas`, margin, yPos);
-            
+
             // Pie de página compacto
             yPos = pageHeight - 10;
             doc.setFontSize(7);
             doc.setFont(undefined, 'normal');
             doc.setTextColor(150, 150, 150);
-            doc.text(`FamilySync - ${new Date().toLocaleDateString('es-ES')}`, margin, yPos);
-            
+            doc.text(`Mi Calendario - ${new Date().toLocaleDateString('es-ES')}`, margin, yPos);
+
             // Descargar
-            const fileName = `resumen_semanal_${start.getFullYear()}${String(start.getMonth()+1).padStart(2,'0')}${String(start.getDate()).padStart(2,'0')}.pdf`;
+            const fileName = `resumen_semanal_${start.getFullYear()}${String(start.getMonth() + 1).padStart(2, '0')}${String(start.getDate()).padStart(2, '0')}.pdf`;
             doc.save(fileName);
-            
+
             closePdfPreview();
         }
 
         init();
     </script>
 </body>
-</html>
 
+</html>

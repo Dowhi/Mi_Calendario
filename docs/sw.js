@@ -1,5 +1,5 @@
 // Service Worker principal para PWA
-const CACHE_NAME = 'familysync-v1';
+const CACHE_NAME = 'familysync-v2';
 const urlsToCache = [
     './',
     './calendar.html',
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (event) => {
             .then((response) => {
                 // Clonar la respuesta
                 const responseToCache = response.clone();
-                
+
                 // Solo cachear si es una petición GET (PUT solo acepta GET)
                 if (event.request.method === 'GET') {
                     caches.open(CACHE_NAME)
@@ -54,7 +54,7 @@ self.addEventListener('fetch', (event) => {
                             cache.put(event.request, responseToCache);
                         });
                 }
-                
+
                 return response;
             })
             .catch(() => {

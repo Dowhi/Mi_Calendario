@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="FamilySync">
-  <title>FamilySync - Calendario Familiar</title>
+  <meta name="apple-mobile-web-app-title" content="Mi Calendario">
+  <title>Mi Calendario - Calendario Familiar</title>
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <style>
     * {
@@ -16,7 +18,8 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html,
+    body {
       height: 100%;
       width: 100%;
       font-size: 90%;
@@ -240,15 +243,16 @@
       display: none;
     }
   </style>
-  
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 </head>
+
 <body>
   <div id="debug" class="debug"></div>
-  
+
   <div class="container">
     <div class="header">
       <div class="logo">📅</div>
@@ -263,7 +267,7 @@
         <div class="current-user" id="currentUserInfo"></div>
       </div>
 
-        <button class="go-button" id="goButton">Ir al Calendario →</button>
+      <button class="go-button" id="goButton">Ir al Calendario →</button>
     </div>
 
     <div class="footer">
@@ -307,7 +311,7 @@
         await db.collection('users').limit(1).get();
         isFirebaseConnected = true;
         console.log('✅ Conectado a Firebase');
-        
+
         // Cargar usuarios desde Firebase
         await loadUsersFromFirebase();
       } catch (error) {
@@ -316,7 +320,7 @@
         users = [...defaultUsers];
         await saveUsersToFirebase(); // Intentar guardar usuarios por defecto
       }
-      
+
       renderUsers();
     }
 
@@ -324,7 +328,7 @@
     async function loadUsersFromFirebase() {
       try {
         const snapshot = await db.collection('users').get();
-        
+
         if (snapshot.empty) {
           // Si no hay usuarios en Firebase, usar los por defecto
           users = [...defaultUsers];
@@ -387,7 +391,7 @@
           console.warn('⚠️ userId no válido:', userId);
           return;
         }
-        
+
         const docId = String(userId);
         await db.collection('users').doc(docId).set({
           ...userData,
@@ -435,7 +439,7 @@
         console.warn('⚠️ Usuario no encontrado:', currentUserId);
         return;
       }
-      
+
       const info = document.getElementById('currentUserInfo');
       const userId = user.id !== undefined && user.id !== null ? user.id : 'N/A';
       info.innerHTML = `
@@ -454,15 +458,15 @@
         console.error('❌ ID de usuario inválido:', userId);
         return;
       }
-      
+
       currentUserId = userId;
       localStorage.setItem('current_user_id', String(userId));
-      
+
       // Actualizar en Firebase si está conectado
       if (isFirebaseConnected) {
         await updateUserInFirebase(userId, { lastSelected: firebase.firestore.FieldValue.serverTimestamp() });
       }
-      
+
       renderUsers();
     }
 
@@ -474,4 +478,5 @@
     init();
   </script>
 </body>
+
 </html>

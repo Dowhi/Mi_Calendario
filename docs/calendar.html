@@ -3183,7 +3183,7 @@
 
         // Estado global
         let currentDate = new Date();
-        let currentUserId = 1;
+        let currentUserId = '1';
         let selectedDate = null;
         let db = null;
         let isFirebaseConnected = false;
@@ -3261,9 +3261,22 @@
 
         // Cargar usuarios desde Firebase
         async function loadUsersFromFirebase() {
+            // 1. Intentar cargar desde localStorage primero (caché rápida)
+            const localUsers = localStorage.getItem('users');
+            if (localUsers) {
+                try {
+                    users = JSON.parse(localUsers);
+                    console.log('📦 Usuarios cargados desde localStorage (caché)');
+                } catch (e) {
+                    console.error('Error parseando usuarios de localStorage:', e);
+                }
+            }
+
             if (!isFirebaseConnected) {
-                console.log('⚠️ Firebase no conectado, usando usuarios por defecto');
-                loadDefaultUsers();
+                if (!users || users.length === 0) {
+                    console.log('⚠️ Firebase no conectado y no hay caché, usando usuarios por defecto');
+                    loadDefaultUsers();
+                }
                 return;
             }
 
@@ -3271,19 +3284,26 @@
                 const snapshot = await db.collection('users').get();
 
                 if (snapshot.empty) {
-                    console.log('⚠️ No hay usuarios en Firebase, usando usuarios por defecto');
-                    loadDefaultUsers();
-                    await saveUsersToFirebase();
+                    if (!users || users.length === 0) {
+                        console.log('⚠️ No hay usuarios en Firebase, usando usuarios por defecto');
+                        loadDefaultUsers();
+                        await saveUsersToFirebase();
+                    }
                 } else {
                     users = snapshot.docs.map(doc => {
                         const data = doc.data();
                         return {
-                            id: parseInt(data.id) || parseInt(doc.id),
+                            id: String(doc.id), // Usar string para mayor compatibilidad
                             name: data.name || `Usuario ${doc.id}`,
-                            color: data.color || '#9E9E9E'
+                            color: data.color || '#9E9E9E',
+                            userId: parseInt(doc.id) || 0,
+                            avatar: data.avatar || '👤',
+                            avatarType: data.avatarType || 'emoji'
                         };
                     });
-                    console.log('✅ Usuarios cargados desde Firebase:', users.length, users);
+                    console.log('✅ Usuarios cargados desde Firebase:', users.length);
+                    // Actualizar localStorage
+                    localStorage.setItem('users', JSON.stringify(users));
                 }
             } catch (error) {
                 console.error('❌ Error cargando usuarios:', error);
@@ -3299,11 +3319,13 @@
         // Cargar usuarios por defecto
         function loadDefaultUsers() {
             users = [
-                { id: 1, name: 'Usuario 1', color: '#2196F3' },
-                { id: 2, name: 'Usuario 2', color: '#4CAF50' },
-                { id: 3, name: 'Usuario 3', color: '#FF9800' },
-                { id: 4, name: 'Usuario 4', color: '#9C27B0' }
+                { id: '1', name: 'Juan Carlos', color: '#2196F3', userId: 1 },
+                { id: '2', name: 'Carmen', color: '#4CAF50', userId: 2 },
+                { id: '3', name: 'María', color: '#FF9800', userId: 3 },
+                { id: '4', name: 'Pedro', color: '#9C27B0', userId: 4 }
             ];
+            // Guardar en local para que el resto de la app los vea
+            localStorage.setItem('users', JSON.stringify(users));
         }
 
         // Guardar usuarios en Firebase
@@ -3312,10 +3334,13 @@
 
             try {
                 for (const user of users) {
-                    await db.collection('users').doc(user.id.toString()).set({
-                        id: user.id,
+                    const docId = String(user.id);
+                    await db.collection('users').doc(docId).set({
                         name: user.name,
                         color: user.color,
+                        userId: parseInt(user.userId) || parseInt(docId) || 0,
+                        avatar: user.avatar || '👤',
+                        avatarType: user.avatarType || 'emoji',
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
@@ -3376,12 +3401,15 @@
                 const updatedUsers = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
-                        id: parseInt(data.id) || parseInt(doc.id),
+                        id: String(doc.id),
                         name: data.name || `Usuario ${doc.id}`,
-                        color: data.color || '#9E9E9E'
+                        color: data.color || '#9E9E9E',
+                        avatar: data.avatar || '👤',
+                        avatarType: data.avatarType || 'emoji'
                     };
                 });
                 users = updatedUsers;
+                localStorage.setItem('users', JSON.stringify(users));
                 console.log('✅ Usuarios actualizados:', users);
                 // Re-renderizar el calendario para aplicar nuevos colores
                 scheduleRenderCalendar();
@@ -3483,7 +3511,7 @@
             // Cargar usuario guardado
             const savedUserId = localStorage.getItem('current_user_id');
             if (savedUserId) {
-                currentUserId = parseInt(savedUserId);
+                currentUserId = String(savedUserId);
             }
 
             // Intentar conectar Firebase
@@ -3715,18 +3743,17 @@
 
         // ===== MODERN PREMIUM WELCOME SCREEN LOGIC v9 =====
 
+        // Función para renderizar el Home (ahora consolidada)
         async function renderHome() {
-            // 1. Update Greeting & Date
-            updateModernHeader();
+            console.log('🏠 Renderizando Inicio/Home...');
 
-            // 2. Update Dashboard Counts (Async)
-            await updateDashboardCounts();
+            // 1. Obtener usuario actual (con manejo de tipos robusto)
+            const user = users.find(u => String(u.id) === String(currentUserId)) ||
+                { name: 'Usuario', color: '#3f51b5', avatar: '👤', avatarType: 'emoji' };
+            const userName = user.name || 'Usuario';
+            const firstName = userName.split(' ')[0];
 
-            // 3. Update Next Event Card
-            await updateNextEventCard();
-        }
-
-        async function updateModernHeader() {
+            // 2. Actualizar Cabecera Moderna (Modern Premium)
             const now = new Date();
             const hour = now.getHours();
             let greeting = 'Hola,';
@@ -3734,53 +3761,101 @@
             else if (hour >= 12 && hour < 20) greeting = '¡Buenas tardes,';
             else greeting = '¡Buenas noches,';
 
-            // Ensure users are loaded or wait a bit/retry? 
-            // Better: Get from auth if local users list is empty
-            let user = users.find(u => u.id === currentUserId);
-
-            if (!user && firebase.auth().currentUser) {
-                // Fallback to auth data
-                const authUser = firebase.auth().currentUser;
-                user = {
-                    name: authUser.displayName || 'Usuario',
-                    photoURL: authUser.photoURL,
-                    color: '#3f51b5'
-                };
-            }
-
-            user = user || { name: 'Usuario', color: '#3f51b5' };
-            const firstName = user.name.split(' ')[0];
-
             const greetingEl = document.getElementById('modernGreeting');
             if (greetingEl) {
                 greetingEl.innerHTML = `${greeting} <br><span class="user-name-highlight">${firstName}</span>`;
             }
 
-            // Date
+            // Fecha Moderna
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
             const dateStr = now.toLocaleDateString('es-ES', options);
             const dateEl = document.getElementById('modernDateDisplay');
             if (dateEl) dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
-            // Avatar
+            // Avatar Moderno
             const avatarEl = document.getElementById('modernUserAvatar');
             if (avatarEl) {
-                if (user.photoURL) {
+                if (user.avatarType === 'photo' && user.avatar) {
                     avatarEl.textContent = '';
-                    avatarEl.style.backgroundImage = `url('${user.photoURL}')`;
+                    avatarEl.style.backgroundImage = `url('${user.avatar}')`;
                     avatarEl.style.backgroundSize = 'cover';
                     avatarEl.style.backgroundPosition = 'center';
-                    avatarEl.style.border = '2px solid #5c6bc0'; // Blue border as requested
+                    avatarEl.style.border = '2px solid #5c6bc0';
                 } else {
-                    avatarEl.textContent = firstName.charAt(0).toUpperCase();
+                    avatarEl.textContent = user.avatar || firstName.charAt(0).toUpperCase();
                     avatarEl.style.background = `linear-gradient(45deg, ${user.color || '#3f51b5'}, #5c6bc0)`;
                     avatarEl.style.backgroundImage = 'none';
+                    avatarEl.style.border = 'none';
                 }
             }
+
+            // 3. Actualizar Vista Standard/Medieval (Legacy)
+            if (document.getElementById('welcomeTitle')) {
+                document.getElementById('welcomeTitle').innerHTML = `¡Hola, ${userName}! 🌿`;
+            }
+            if (document.getElementById('medievalWelcomeHeader')) {
+                document.getElementById('medievalWelcomeHeader').textContent = `¡HOLA, ${userName.toUpperCase()}!`;
+            }
+            if (document.getElementById('medievalInitial')) {
+                document.getElementById('medievalInitial').textContent = userName.charAt(0).toUpperCase();
+            }
+
+            // 4. Actualizar Contadores y Próximos Eventos
+            await updateDashboardCounts();
+            await updateNextEventCard();
+
+            // 5. Cargar lista de eventos para hoy
+            const todayEvents = await getEventsForDate(now);
+            const count = todayEvents.length;
+
+            if (document.getElementById('welcomeStatus')) {
+                document.getElementById('welcomeStatus').textContent = count === 1 ? 'Tienes 1 evento para hoy.' : `Tienes ${count} eventos para hoy.`;
+            }
+            if (document.getElementById('medievalWelcomeStatus')) {
+                document.getElementById('medievalWelcomeStatus').textContent = `TIENES ${count} ${count === 1 ? 'EVENTO' : 'EVENTOS'} PARA HOY.`;
+            }
+
+            // Contenedores de eventos
+            const eventsContainer = document.getElementById('homeUpcomingEvents');
+            if (eventsContainer) {
+                eventsContainer.innerHTML = count === 0 ? '<div class="empty-message">No tienes eventos para hoy.</div>' : '';
+                todayEvents.forEach(event => {
+                    const item = document.createElement('div');
+                    item.className = 'home-event-item';
+                    item.onclick = () => openDayModal(now);
+                    const time = event.time || '--:--';
+                    const color = event.userColor || getUserColor(event.userId);
+                    const title = event.text || (event.shiftId ? 'Turno' : 'Sin título');
+                    item.innerHTML = `
+                        <div class="home-event-time">${time}</div>
+                        <div class="home-event-divider" style="background-color: ${color}"></div>
+                        <div class="home-event-title">${title}</div>
+                    `;
+                    eventsContainer.appendChild(item);
+                });
+            }
+
+            const medievalContainer = document.getElementById('medievalUpcomingEvents');
+            if (medievalContainer) {
+                medievalContainer.innerHTML = count === 0 ? '<div class="medieval-event-item">No tienes eventos para hoy.</div>' : '';
+                todayEvents.forEach(event => {
+                    const item = document.createElement('div');
+                    item.className = 'medieval-event-item';
+                    const time = event.time ? `<b>${event.time}:</b> ` : '';
+                    let title = (event.text || (event.shiftId ? 'Turno' : 'Sin título')).toUpperCase();
+                    item.innerHTML = `${time}${title}`;
+                    medievalContainer.appendChild(item);
+                });
+            }
+
+            // Agenda medieval de 3 semanas
+            renderMedievalThreeWeekAgenda();
         }
 
+
+
         async function updateDashboardCounts() {
-            const todayStr = toDateString(new Date());
+            const todayStr = formatDateKey(new Date());
             const events = await getEventsForDate(new Date());
 
             // Filter events (excluding notes if needed, or keeping them as events)
@@ -3801,7 +3876,7 @@
 
         async function updateNextEventCard() {
             const now = new Date();
-            const todayStr = toDateString(now);
+            const todayStr = formatDateKey(now);
             const events = await getEventsForDate(now);
 
             // Filter future events only? Or just showing the most relevant one for today
@@ -3943,92 +4018,7 @@
             }
         }
 
-        // Renderizar vista de Inicio
-        async function renderHome() {
-            const currentUser = users.find(u => u.id === currentUserId);
-            const userName = currentUser ? currentUser.name : 'Usuario';
 
-            // Actualizar vista standard
-            if (document.getElementById('welcomeTitle')) {
-                document.getElementById('welcomeTitle').innerHTML = `¡Hola, ${userName}! 🌿`;
-            }
-
-            // Actualizar vista medieval
-            if (document.getElementById('medievalWelcomeHeader')) {
-                const upperName = userName.toUpperCase();
-                document.getElementById('medievalWelcomeHeader').textContent = `¡HOLA, ${upperName}!`;
-            }
-            if (document.getElementById('medievalInitial')) {
-                document.getElementById('medievalInitial').textContent = userName.charAt(0).toUpperCase();
-            }
-
-            const today = new Date();
-            const todayKey = formatDateKey(today);
-
-            try {
-                const events = await getEventsForDate(today);
-                const count = events.length;
-
-                const statusText = count === 1
-                    ? `Tienes 1 evento para hoy.`
-                    : `Tienes ${count} eventos para hoy.`;
-
-                if (document.getElementById('welcomeStatus')) {
-                    document.getElementById('welcomeStatus').textContent = statusText;
-                }
-                if (document.getElementById('medievalWelcomeStatus')) {
-                    const eventText = count === 1 ? 'EVENTO' : 'EVENTOS';
-                    document.getElementById('medievalWelcomeStatus').textContent = `TIENES ${count} ${eventText} PARA HOY.`;
-                }
-
-                // Standard container
-                const eventsContainer = document.getElementById('homeUpcomingEvents');
-                if (eventsContainer) {
-                    eventsContainer.innerHTML = '';
-                    if (count === 0) {
-                        eventsContainer.innerHTML = '<div class="empty-message">No tienes eventos para hoy.</div>';
-                    } else {
-                        events.forEach(event => {
-                            const item = document.createElement('div');
-                            item.className = 'home-event-item';
-                            item.onclick = () => openDayModal(today);
-                            const time = event.time || '--:--';
-                            const color = event.userColor || getUserColor(event.userId);
-                            const title = event.text || (event.shiftId ? 'Turno' : 'Sin título');
-                            item.innerHTML = `
-                                <div class="home-event-time">${time}</div>
-                                <div class="home-event-divider" style="background-color: ${color}"></div>
-                                <div class="home-event-title">${title}</div>
-                            `;
-                            eventsContainer.appendChild(item);
-                        });
-                    }
-                }
-
-                // Medieval container
-                const medievalContainer = document.getElementById('medievalUpcomingEvents');
-                if (medievalContainer) {
-                    medievalContainer.innerHTML = '';
-                    if (count === 0) {
-                        medievalContainer.innerHTML = '<div class="medieval-event-item">No tienes eventos para hoy.</div>';
-                    } else {
-                        events.forEach(event => {
-                            const item = document.createElement('div');
-                            item.className = 'medieval-event-item';
-                            const time = event.time ? `<b>${event.time}:</b> ` : '';
-                            let title = event.text || (event.shiftId ? 'Turno' : 'Sin título');
-                            title = title.toUpperCase();
-                            item.innerHTML = `${time}${title}`;
-                            medievalContainer.appendChild(item);
-                        });
-                    }
-                }
-                // Medieval 3-week agenda
-                renderMedievalThreeWeekAgenda();
-            } catch (error) {
-                console.error('Error cargando eventos de inicio:', error);
-            }
-        }
 
         // Renderizar la agenda de 3 semanas (anterior, actual, siguiente) con texto real
         async function renderMedievalThreeWeekAgenda() {
@@ -5675,13 +5665,15 @@
 
         // Obtener color de usuario
         function getUserColor(userId) {
-            const user = users.find(u => u.id === userId);
+            if (!userId) return '#999';
+            const user = users.find(u => String(u.id) === String(userId));
             return user ? user.color : '#999';
         }
 
         // Obtener nombre de usuario
         function getUserName(userId) {
-            const user = users.find(u => u.id === userId);
+            if (!userId) return 'Usuario';
+            const user = users.find(u => String(u.id) === String(userId));
             return user ? user.name : 'Usuario';
         }
 

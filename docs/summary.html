@@ -695,10 +695,24 @@
         }
 
         async function loadUsers() {
+            // Cargar de local por si acaso
+            const localUsers = localStorage.getItem('users');
+            if (localUsers) {
+                try {
+                    const parsed = JSON.parse(localUsers);
+                    parsed.forEach(u => {
+                        usersIndex.set(String(u.id), u.name || `Usuario ${u.id}`);
+                    });
+                } catch (e) { }
+            }
+
             try {
                 if (!isFirebaseConnected) return;
                 const snap = await db.collection('users').get();
-                snap.docs.forEach(d => { const u = d.data(); usersIndex.set(parseInt(u.id) || parseInt(d.id), u.name || `Usuario ${d.id}`); });
+                snap.docs.forEach(d => {
+                    const u = d.data();
+                    usersIndex.set(String(d.id), u.name || `Usuario ${d.id}`);
+                });
             } catch (e) { /* opcional */ }
         }
 

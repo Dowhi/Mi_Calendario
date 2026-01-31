@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="FamilySync">
+    <meta name="apple-mobile-web-app-title" content="Mi Calendario">
     <meta name="theme-color" content="#1B5E20">
-    <title>Turnos Disponibles - FamilySync</title>
+    <title>Turnos Disponibles - Mi Calendario</title>
     <link rel="apple-touch-icon" href="icons/Icon-192.png">
-    
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
+
     <style>
         * {
             margin: 0;
@@ -23,7 +24,8 @@
             -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             width: 100%;
             overflow: hidden;
@@ -71,7 +73,8 @@
         }
 
         .header-right {
-            width: 40px; /* Para mantener el título centrado */
+            width: 40px;
+            /* Para mantener el título centrado */
         }
 
         /* Action Buttons */
@@ -264,8 +267,13 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         .menu-content {
@@ -278,8 +286,13 @@
         }
 
         @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
         }
 
         .menu-header {
@@ -334,126 +347,127 @@
         .menu-option-icon {
             font-size: 20px;
         }
-        
+
         /* Light Theme Updates */
         .action-btn {
             background: white;
             color: #333;
             border: 1px solid #e0e0e0;
         }
-        
+
         .shift-item {
             background: white;
             border: 1px solid #e0e0e0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        
+
         .shift-name {
             color: #333;
         }
-        
+
         .shift-time {
             color: #666;
         }
-        
+
         .shifts-container {
             background: #f5f5f5;
         }
-        
+
         .shift-options {
             color: #333;
         }
-        
+
         .empty-state {
             color: #999;
         }
-        
+
         /* Dark Theme */
         body.dark-theme {
             background: #1a1a1a;
             color: white;
         }
-        
+
         body.dark-theme .header {
             background: #0D47A1;
             border-bottom-color: #0a3470;
         }
-        
+
         body.dark-theme .action-btn {
             background: #2a2a2a;
             color: white;
             border: 1px solid #333;
         }
-        
+
         body.dark-theme .shifts-container {
             background: #0f0f0f;
         }
-        
+
         body.dark-theme .shift-item {
             background: #2a2a2a;
             border: 1px solid #333;
             box-shadow: none;
         }
-        
+
         body.dark-theme .shift-name {
             color: white;
         }
-        
+
         body.dark-theme .shift-time {
             color: #ccc;
         }
-        
+
         body.dark-theme .shift-options {
             color: white;
         }
-        
+
         body.dark-theme .empty-state {
             color: #666;
         }
-        
+
         /* Auto dark mode */
         @media (prefers-color-scheme: dark) {
             body:not(.light-theme) {
                 background: #1a1a1a;
                 color: white;
             }
-            
+
             body:not(.light-theme) .header {
                 background: #0D47A1;
             }
-            
+
             body:not(.light-theme) .action-btn {
                 background: #2a2a2a;
                 color: white;
                 border: 1px solid #333;
             }
-            
+
             body:not(.light-theme) .shifts-container {
                 background: #0f0f0f;
             }
-            
+
             body:not(.light-theme) .shift-item {
                 background: #2a2a2a;
                 border: 1px solid #333;
                 box-shadow: none;
             }
-            
+
             body:not(.light-theme) .shift-name {
                 color: white;
             }
-            
+
             body:not(.light-theme) .shift-time {
                 color: #ccc;
             }
-            
+
             body:not(.light-theme) .shift-options {
                 color: white;
             }
         }
     </style>
 </head>
+
 <body>
-    
+
 
     <!-- Header -->
     <div class="header">
@@ -518,7 +532,7 @@
             try {
                 const settings = JSON.parse(localStorage.getItem('app_settings_v1')) || {};
                 const theme = settings.theme || 'system';
-                
+
                 if (theme === 'dark') {
                     document.body.classList.add('dark-theme');
                     document.body.classList.remove('light-theme');
@@ -536,22 +550,22 @@
         // Inicializar
         function init() {
             console.log('🔄 Inicializando pantalla de turnos...');
-            
+
             // Aplicar tema antes de todo
             applyTheme();
-            
+
             // Pequeño delay para asegurar que el DOM esté listo
             setTimeout(() => {
                 // Intentar conectar Firebase
                 if (!initFirebase()) {
-                    
+
                 }
 
                 loadShifts();
             }, 100);
         }
 
-        
+
 
         // Inicializar Firebase
         function initFirebase() {
@@ -560,16 +574,16 @@
                 db = firebase.firestore();
                 isFirebaseConnected = true;
                 console.log('✅ Firebase conectado correctamente');
-                
-                
+
+
                 // Configurar listener para cambios en tiempo real
                 setupRealtimeListener();
-                
+
                 return true;
             } catch (error) {
                 console.error('❌ Error conectando Firebase:', error);
                 isFirebaseConnected = false;
-                
+
                 return false;
             }
         }
@@ -577,7 +591,7 @@
         // Configurar listener en tiempo real
         function setupRealtimeListener() {
             if (!isFirebaseConnected) return;
-            
+
             db.collection('shifts').onSnapshot((snapshot) => {
                 console.log('🔄 Cambios detectados en turnos');
                 loadShifts();
@@ -592,7 +606,7 @@
                 try {
                     const snapshot = await db.collection('shifts').get();
                     shifts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    
+
                     // Asegurar que todos los turnos tengan un campo 'order'
                     let needsUpdate = false;
                     shifts.forEach((shift, index) => {
@@ -601,15 +615,15 @@
                             needsUpdate = true;
                         }
                     });
-                    
+
                     // Si faltaban orders, guardar actualizaciones
                     if (needsUpdate) {
                         await saveShiftsToFirebase();
                     }
-                    
+
                     // Ordenar por el campo 'order'
                     shifts.sort((a, b) => (a.order || 0) - (b.order || 0));
-                    
+
                     if (shifts.length === 0) {
                         // Si no hay turnos en Firebase, usar los predefinidos
                         shifts = [...defaultShifts];
@@ -648,7 +662,7 @@
                 console.error('❌ Elemento shiftsContainer no encontrado');
                 return;
             }
-            
+
             container.innerHTML = '';
 
             if (shifts.length === 0) {
@@ -668,13 +682,13 @@
                 shiftEl.draggable = true;
                 shiftEl.dataset.shiftId = shift.id;
                 shiftEl.dataset.index = index;
-                
+
                 // Click para editar
                 shiftEl.onclick = () => editShift(shift);
 
                 // Determinar el color del turno
                 const backgroundColor = shift.backgroundColor || shift.colorHex || shift.color || '#3B82F6';
-                
+
                 // Determinar la hora (si hay timeSlots, usar el primero, sino usar los campos legacy)
                 let timeDisplay = '00:00 - 00:00';
                 if (shift.timeSlots && shift.timeSlots.length > 0) {
@@ -710,14 +724,14 @@
 
         // Drag and Drop handlers
         let draggedElement = null;
-        
+
         function handleDragStart(e, element) {
             draggedElement = element;
             element.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/html', element.innerHTML);
         }
-        
+
         function handleDragOver(e, element) {
             if (e.preventDefault) {
                 e.preventDefault();
@@ -725,39 +739,39 @@
             e.dataTransfer.dropEffect = 'move';
             return false;
         }
-        
+
         function handleDrop(e, element) {
             if (e.stopPropagation) {
                 e.stopPropagation();
             }
-            
+
             if (draggedElement !== element) {
                 const container = document.getElementById('shiftsContainer');
                 const allItems = Array.from(container.querySelectorAll('.shift-item'));
-                
+
                 const draggedIndex = allItems.indexOf(draggedElement);
                 const targetIndex = allItems.indexOf(element);
-                
+
                 // Reordenar array
                 const draggedShift = shifts[draggedIndex];
                 shifts.splice(draggedIndex, 1);
                 shifts.splice(targetIndex, 0, draggedShift);
-                
+
                 // Actualizar orders
                 shifts.forEach((shift, index) => {
                     shift.order = index;
                 });
-                
+
                 // Guardar en Firebase
                 saveShiftsToFirebase();
-                
+
                 // Re-renderizar
                 renderShifts();
             }
-            
+
             return false;
         }
-        
+
         function handleDragEnd(e, element) {
             const items = document.querySelectorAll('.shift-item');
             items.forEach(item => {
@@ -843,7 +857,7 @@
         // Eliminar turno
         async function deleteShift(shiftId) {
             shifts = shifts.filter(s => s.id !== shiftId);
-            
+
             if (isFirebaseConnected) {
                 try {
                     await db.collection('shifts').doc(shiftId).delete();
@@ -865,4 +879,5 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
+
 </html>

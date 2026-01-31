@@ -42,6 +42,22 @@
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .firebase-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #FF5252;
+            margin-left: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: inline-block;
+        }
+
+        .firebase-status.connected {
+            background: #4CAF50;
+            box-shadow: 0 0 5px #4CAF50;
         }
 
         .header-arrow {
@@ -468,8 +484,11 @@
     <!-- Header -->
     <div class="header">
         <button class="header-arrow" onclick="goBack()">←</button>
-        <div class="header-title">Gestión de Usuarios</div>
-        <div class="header-action" style="visibility: hidden;"></div>
+        <div class="header-title">
+            GESTIÓN DE USUARIOS
+            <span id="firebaseStatusDot" class="firebase-status" title="Desconectado"></span>
+        </div>
+        <button class="header-arrow" onclick="forceRefresh()" title="Refrescar App" style="font-size: 18px;">🔄</button>
     </div>
 
     <!-- Main Content -->
@@ -494,9 +513,10 @@
             apiKey: "AIzaSyB5vvp7IQOZLO7LlsUY_Wq-H8M_5PH3ZQE",
             authDomain: "apptaxi-f2190.firebaseapp.com",
             projectId: "apptaxi-f2190",
-            storageBucket: "apptaxi-f2190.appspot.com",
-            messagingSenderId: "847108739520",
-            appId: "1:847108739520:web:0231234acd7c8e7e10db1e"
+            storageBucket: "apptaxi-f2190.firebasestorage.app",
+            messagingSenderId: "804273724178",
+            appId: "1:804273724178:web:c5955a1f657884c0e7f1cb",
+            measurementId: "G-3D8R30TYTM"
         };
 
         let db = null;
@@ -536,40 +556,75 @@
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
                 isFirebaseConnected = true;
+                const dot = document.getElementById('firebaseStatusDot');
+                if (dot) {
+                    dot.classList.add('connected');
+                    dot.title = 'Firebase Conectado';
+                }
                 console.log('✅ Firebase conectado');
+                console.log('Firebase Config en uso:', {
+                    projectId: firebaseConfig.projectId,
+                    appId: firebaseConfig.appId,
+                    authDomain: firebaseConfig.authDomain
+                });
                 return true;
             } catch (error) {
                 console.error('❌ Error conectando Firebase:', error);
                 isFirebaseConnected = false;
+                const dot = document.getElementById('firebaseStatusDot');
+                if (dot) {
+                    dot.classList.remove('connected');
+                    dot.title = 'Error de conexión: ' + error.message;
+                }
                 return false;
             }
         }
 
         // Cargar usuarios
         async function loadUsers() {
+            // Intentar cargar desde localStorage primero para rapidez y como fallback
+            const localUsers = localStorage.getItem('users');
+            if (localUsers) {
+                try {
+                    users = JSON.parse(localUsers);
+                    console.log('📦 Usuarios cargados desde localStorage (caché)');
+                } catch (e) {
+                    console.error('Error parseando usuarios de localStorage:', e);
+                }
+            }
+
             if (isFirebaseConnected) {
                 try {
                     const snapshot = await db.collection('users').get();
-                    users = snapshot.docs.map(doc => {
+                    const firebaseUsers = snapshot.docs.map(doc => {
                         const data = doc.data();
                         return {
                             id: String(doc.id),
                             name: data.name || `Usuario ${doc.id}`,
                             color: data.color || '#9E9E9E',
-                            userId: parseInt(doc.id) || 0
+                            userId: parseInt(doc.id) || 0,
+                            avatar: data.avatar || '👤',
+                            avatarType: data.avatarType || 'emoji'
                         };
                     });
 
-                    // Si no hay usuarios en Firebase, usar los por defecto
-                    if (users.length === 0) {
+                    if (firebaseUsers.length > 0) {
+                        users = firebaseUsers;
+                        // Sincronizar con localStorage
+                        localStorage.setItem('users', JSON.stringify(users));
+                        console.log('✅ Usuarios sincronizados desde Firebase');
+                    } else if (users.length === 0) {
+                        // Si no hay nada en Firebase ni en local
                         users = getDefaultUsers();
                         await saveUsersToFirebase();
                     }
                 } catch (error) {
-                    console.error('❌ Error cargando usuarios:', error);
-                    users = getDefaultUsers();
+                    console.error('❌ Error cargando usuarios de Firebase:', error);
+                    if (users.length === 0) {
+                        users = getDefaultUsers();
+                    }
                 }
-            } else {
+            } else if (users.length === 0) {
                 users = getDefaultUsers();
             }
 
@@ -595,7 +650,9 @@
                     id: id,
                     name: String(user.name || `Usuario ${id}`),
                     color: String(user.color || '#9E9E9E'),
-                    userId: userId
+                    userId: userId,
+                    avatar: user.avatar || '👤',
+                    avatarType: user.avatarType || 'emoji'
                 };
             });
 
@@ -840,10 +897,21 @@
             button.textContent = '💾 Guardando...';
 
             try {
+                // Capturar los nombres de los inputs antes de guardar
+                users.forEach(user => {
+                    const input = document.getElementById(`nameInput${user.id}`);
+                    if (input) {
+                        user.name = input.value.trim() || user.name;
+                    }
+                });
+
+                // Siempre guardar en localStorage primero para asegurar persistencia local inmediata
+                localStorage.setItem('users', JSON.stringify(users));
+                console.log('💾 Usuarios guardados en localStorage');
+
                 if (isFirebaseConnected) {
                     await saveUsersToFirebase();
-                } else {
-                    localStorage.setItem('users', JSON.stringify(users));
+                    console.log('✅ Usuarios guardados en Firebase');
                 }
 
                 button.textContent = '✅ Guardado';
@@ -900,6 +968,7 @@
                 console.log('✅ Todos los usuarios guardados en Firebase');
             } catch (error) {
                 console.error('❌ Error guardando usuarios:', error);
+                alert('Error al guardar en Firebase: ' + error.message);
                 console.error('Datos de usuarios:', users);
                 throw error;
             }
@@ -1054,6 +1123,15 @@
             });
         }
 
+        // Actualizar nombre del usuario en el array local
+        function updateUserName(userId, name) {
+            console.log(`✍️ Actualizando nombre para usuario ${userId}: ${name}`);
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.name = name;
+            }
+        }
+
         // Actualizar preview del avatar
         function updateAvatarPreview(userId) {
             const user = users.find(u => u.id === userId);
@@ -1072,6 +1150,20 @@
         // Volver al calendario
         function goBack() {
             window.location.href = 'calendar.html';
+        }
+
+        // Forzar actualización total (limpiar caché y SW)
+        async function forceRefresh() {
+            if (confirm('¿Quieres refrescar la aplicación para cargar la última versión?')) {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                localStorage.removeItem('users'); // Opcional: limpiar caché local de usuarios para forzar recarga de Firebase
+                window.location.reload(true);
+            }
         }
 
         // Inicializar
