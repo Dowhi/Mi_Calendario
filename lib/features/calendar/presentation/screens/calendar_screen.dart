@@ -6,6 +6,8 @@ import 'package:calendario_familiar/core/providers/text_size_provider.dart';
 import 'package:calendario_familiar/core/models/local_user.dart';
 import 'package:calendario_familiar/core/providers/current_user_provider.dart';
 import 'package:calendario_familiar/core/services/event_user_service.dart';
+import 'package:calendario_familiar/core/widgets/glassmorphic_card.dart';
+import 'package:calendario_familiar/theme/app_theme.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -189,9 +191,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     // Modo de compatibilidad para iOS Safari cuando calendarService es nulo
     final isCompatibilityMode = calendarService == null;
 
-    return RepaintBoundary(
+    // Obtener gradiente dinámico según la hora
+    final gradientColors = AppTheme.getTimeBasedGradient();
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: gradientColors,
+        ),
+      ),
       child: Scaffold(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: Colors.transparent, // Transparente para ver el gradiente
         appBar: AppBar(
           backgroundColor: const Color(0xFF1B5E20),
           foregroundColor: Colors.white,
@@ -491,87 +503,93 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           }
         }
       },
-      child: Container(
+      child: GlassmorphicCard(
         margin: const EdgeInsets.all(0.5),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(
-            color: isSelected ? Colors.blue : Colors.grey[300]!,
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(2),
-          boxShadow: isToday ? [
-            BoxShadow(
-              color: Colors.orange.withOpacity(0.3),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            ),
-          ] : null,
-        ),
-        child: Stack(
-          children: [
-            if (events.isNotEmpty)
-              Positioned.fill(
-                child: _buildDayBackground(date, events),
+        borderRadius: 4,
+        blurIntensity: 5.0,
+        backgroundColor: Colors.white.withOpacity(0.75), // Más opaco para legibilidad
+        borderColor: isSelected 
+            ? Colors.blue.withOpacity(0.8) 
+            : Colors.white.withOpacity(0.4),
+        borderWidth: isSelected ? 2 : 1.5,
+        padding: EdgeInsets.zero,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: isToday ? [
+              BoxShadow(
+                color: Colors.orange.withOpacity(0.4),
+                blurRadius: 4,
+                spreadRadius: 1,
+                offset: const Offset(0, 2),
               ),
+            ] : null,
+          ),
+          child: Stack(
+            children: [
+              if (events.isNotEmpty)
+                Positioned.fill(
+                  child: _buildDayBackground(date, events),
+                ),
 
-            Positioned(
-              top: 2,
-              left: 2,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: isToday ? BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ) : null,
-                child: Text(
-                  date.day.toString(),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: _getDayNumberColor(date, events, isToday),
+              Positioned(
+                top: 2,
+                left: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: isToday ? BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ) : null,
+                  child: Text(
+                    date.day.toString(),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: _getDayNumberColor(date, events, isToday),
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            if (!_hasShifts(events))
-              Positioned(
-                top: 20,
-                left: 2,
-                right: 2,
-                child: _buildNotes(date, events),
-              ),
-
-            if (dayCategories.isNotEmpty)
-              Positioned(
-                bottom: 1,
-                left: 1,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (dayCategories['category1'] != null && dayCategories['category1'] != 'Ninguno')
-                      Icon(
-                        _getCategoryIcon(dayCategories['category1']),
-                        size: 12,
-                        color: Colors.grey[700],
-                      ),
-                    if (dayCategories['category2'] != null && dayCategories['category2'] != 'Ninguno')
-                      Icon(
-                        _getCategoryIcon(dayCategories['category2']),
-                        size: 12,
-                        color: Colors.grey[700],
-                      ),
-                    if (dayCategories['category3'] != null && dayCategories['category3'] != 'Ninguno')
-                      Icon(
-                        _getCategoryIcon(dayCategories['category3']),
-                        size: 12,
-                        color: Colors.grey[700],
-                      ),
-                  ],
+              if (!_hasShifts(events))
+                Positioned(
+                  top: 20,
+                  left: 2,
+                  right: 2,
+                  child: _buildNotes(date, events),
                 ),
-              ),
-          ],
+
+              if (dayCategories.isNotEmpty)
+                Positioned(
+                  bottom: 1,
+                  left: 1,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (dayCategories['category1'] != null && dayCategories['category1'] != 'Ninguno')
+                        Icon(
+                          _getCategoryIcon(dayCategories['category1']),
+                          size: 12,
+                          color: Colors.grey[700],
+                        ),
+                      if (dayCategories['category2'] != null && dayCategories['category2'] != 'Ninguno')
+                        Icon(
+                          _getCategoryIcon(dayCategories['category2']),
+                          size: 12,
+                          color: Colors.grey[700],
+                        ),
+                      if (dayCategories['category3'] != null && dayCategories['category3'] != 'Ninguno')
+                        Icon(
+                          _getCategoryIcon(dayCategories['category3']),
+                          size: 12,
+                          color: Colors.grey[700],
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

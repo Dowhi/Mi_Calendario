@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Gestión de Usuarios - FamilySync</title>
-    
+    <title>Gestión de Usuarios - Mi Calendario</title>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
+
     <style>
         * {
             margin: 0;
@@ -18,7 +19,8 @@
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             width: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
@@ -229,7 +231,7 @@
             position: relative;
             flex-shrink: 0;
             display: inline-block;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .color-option:hover {
@@ -258,7 +260,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .check-icon svg {
@@ -299,8 +301,169 @@
             background: #ccc;
             cursor: not-allowed;
         }
+
+        /* ===== AVATAR SYSTEM v8 ===== */
+
+        /* Avatar Section */
+        .avatar-section {
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+
+        .avatar-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1B5E20;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Avatar Preview */
+        .avatar-preview-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .avatar-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            border: 3px solid #1B5E20;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .avatar-preview:hover {
+            transform: scale(1.05);
+        }
+
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Avatar Emoji Selector */
+        .avatar-emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .avatar-emoji-option {
+            aspect-ratio: 1;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            background: #ffffff;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 8px;
+        }
+
+        .avatar-emoji-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-color: #1B5E20;
+        }
+
+        .avatar-emoji-option.selected {
+            background: #e8f5e9;
+            border-color: #1B5E20;
+            border-width: 3px;
+        }
+
+        .avatar-emoji-option:active {
+            transform: scale(0.95);
+        }
+
+        /* Upload Button */
+        .avatar-upload-container {
+            margin-top: 12px;
+        }
+
+        .avatar-upload-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .avatar-upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+        }
+
+        .avatar-upload-btn:active {
+            transform: scale(0.97);
+        }
+
+        .avatar-upload-input {
+            display: none;
+        }
+
+        /* Avatar Type Tabs */
+        .avatar-type-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            background: #f0f0f0;
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .avatar-type-tab {
+            flex: 1;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .avatar-type-tab.active {
+            background: white;
+            color: #1B5E20;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .avatar-content-panel {
+            display: none;
+        }
+
+        .avatar-content-panel.active {
+            display: block;
+        }
     </style>
 </head>
+
 <body>
     <!-- Header -->
     <div class="header">
@@ -312,7 +475,7 @@
     <!-- Main Content -->
     <div class="main-content">
         <div class="instruction-text">Personaliza los nombres y colores de los usuarios:</div>
-        
+
         <div id="usersContainer">
             <!-- Se carga dinámicamente -->
         </div>
@@ -396,7 +559,7 @@
                             userId: parseInt(doc.id) || 0
                         };
                     });
-                    
+
                     // Si no hay usuarios en Firebase, usar los por defecto
                     if (users.length === 0) {
                         users = getDefaultUsers();
@@ -409,7 +572,7 @@
             } else {
                 users = getDefaultUsers();
             }
-            
+
             // Limpiar y normalizar datos de usuarios
             users = users.map((user, index) => {
                 // Asegurar que ID sea un string válido
@@ -419,7 +582,7 @@
                 } else {
                     id = String(id);
                 }
-                
+
                 // Asegurar que userId sea un número
                 let userId = user.userId;
                 if (!userId || typeof userId === 'object') {
@@ -427,7 +590,7 @@
                 } else {
                     userId = parseInt(userId);
                 }
-                
+
                 return {
                     id: id,
                     name: String(user.name || `Usuario ${id}`),
@@ -435,7 +598,7 @@
                     userId: userId
                 };
             });
-            
+
             renderUsers();
             setupScrollListeners();
         }
@@ -458,11 +621,62 @@
             users.forEach((user, index) => {
                 const card = document.createElement('div');
                 card.className = 'user-profile-card';
-                
+
                 const userNumber = index + 1;
-                
+
+                // Determinar avatar a mostrar
+                const avatarDisplay = user.avatarType === 'photo' && user.avatar
+                    ? `<img src="${user.avatar}" alt="Avatar"/>`
+                    : user.avatar || '👤';
+
                 card.innerHTML = `
                     <div class="user-name-label">Nombre del Usuario ${userNumber}</div>
+                    
+                    <!-- Avatar Section -->
+                    <div class="avatar-section">
+                        <div class="avatar-label">🎭 Avatar del Usuario</div>
+                        
+                        <!-- Avatar Preview -->
+                        <div class="avatar-preview-container">
+                            <div class="avatar-preview" id="avatarPreview${user.id}">
+                                ${avatarDisplay}
+                            </div>
+                        </div>
+                        
+                        <!-- Avatar Type Tabs -->
+                        <div class="avatar-type-tabs">
+                            <button class="avatar-type-tab active" onclick="switchAvatarTab('${user.id}', 'emoji')" id="emojiTab${user.id}">
+                                😊 Caritas
+                            </button>
+                            <button class="avatar-type-tab" onclick="switchAvatarTab('${user.id}', 'photo')" id="photoTab${user.id}">
+                                📷 Foto
+                            </button>
+                        </div>
+                        
+                        <!-- Emoji Panel -->
+                        <div class="avatar-content-panel active" id="emojiPanel${user.id}">
+                            <div class="avatar-emoji-grid">
+                                ${renderEmojiOptions(user)}
+                            </div>
+                        </div>
+                        
+                        <!-- Photo Upload Panel -->
+                        <div class="avatar-content-panel" id="photoPanel${user.id}">
+                            <div class="avatar-upload-container">
+                                <input 
+                                    type="file" 
+                                    id="fileInput${user.id}" 
+                                    class="avatar-upload-input" 
+                                    accept="image/*"
+                                    onchange="handlePhotoUpload('${user.id}', event)"
+                                />
+                                <button class="avatar-upload-btn" onclick="document.getElementById('fileInput${user.id}').click()">
+                                    📷 Subir Foto desde Galería
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="user-name-input-container">
                         <div class="color-preview" style="background-color: ${user.color}" id="colorPreview${user.id}"></div>
                         <input 
@@ -526,11 +740,11 @@
         // Renderizar opciones de color
         function renderColorOptions(user) {
             const usedColors = users.filter(u => u.id !== user.id).map(u => u.color);
-            
+
             return availableColors.map((color) => {
                 const isSelected = user.color === color;
                 const isDisabled = usedColors.includes(color);
-                
+
                 let borderStyle = '';
                 if (color === '#FFFFFF' || color === '#000000') {
                     borderStyle = 'border: 1px solid #ddd;';
@@ -659,7 +873,7 @@
 
             try {
                 console.log('📤 Guardando usuarios:', users);
-                
+
                 for (const user of users) {
                     // Validar y normalizar el ID
                     let docId = user.id;
@@ -669,14 +883,16 @@
                     } else {
                         docId = String(docId);
                     }
-                    
-                    // Validar y preparar datos
+
+                    // Validar y preparar datos (ahora incluye avatar)
                     const userData = {
                         name: String(user.name || `Usuario ${docId}`),
                         color: String(user.color || '#9E9E9E'),
-                        userId: parseInt(user.userId) || parseInt(docId)
+                        userId: parseInt(user.userId) || parseInt(docId),
+                        avatar: user.avatar || '👤',
+                        avatarType: user.avatarType || 'emoji'
                     };
-                    
+
                     console.log(`💾 Guardando usuario ${docId}:`, userData);
                     await db.collection('users').doc(docId).set(userData);
                     console.log(`✅ Usuario ${docId} guardado correctamente`);
@@ -686,6 +902,170 @@
                 console.error('❌ Error guardando usuarios:', error);
                 console.error('Datos de usuarios:', users);
                 throw error;
+            }
+        }
+
+        // ===== AVATAR SYSTEM FUNCTIONS v8 =====
+
+        // Predefined emoji avatars
+        const defaultAvatars = [
+            '😊', '😎', '🥳', '🤓', '😇', '🤗',
+            '👨', '👩', '👦', '👧', '👴', '👵'
+        ];
+
+        // Renderizar opciones de emoji
+        function renderEmojiOptions(user) {
+            return defaultAvatars.map(emoji => {
+                const isSelected = user.avatar === emoji && user.avatarType === 'emoji';
+                const selectedClass = isSelected ? 'selected' : '';
+
+                return `
+                    <div class="avatar-emoji-option ${selectedClass}" onclick="selectEmoji('${user.id}', '${emoji}')">
+                        ${emoji}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Cambiar entre tabs de avatar
+        function switchAvatarTab(userId, tabType) {
+            // Update tabs
+            const emojiTab = document.getElementById(`emojiTab${userId}`);
+            const photoTab = document.getElementById(`photoTab${userId}`);
+
+            if (tabType === 'emoji') {
+                emojiTab.classList.add('active');
+                photoTab.classList.remove('active');
+            } else {
+                photoTab.classList.add('active');
+                emojiTab.classList.remove('active');
+            }
+
+            // Update panels
+            const emojiPanel = document.getElementById(`emojiPanel${userId}`);
+            const photoPanel = document.getElementById(`photoPanel${userId}`);
+
+            if (tabType === 'emoji') {
+                emojiPanel.classList.add('active');
+                photoPanel.classList.remove('active');
+            } else {
+                photoPanel.classList.add('active');
+                emojiPanel.classList.remove('active');
+            }
+        }
+
+        // Seleccionar emoji como avatar
+        function selectEmoji(userId, emoji) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            user.avatar = emoji;
+            user.avatarType = 'emoji';
+
+            updateAvatarPreview(userId);
+            renderUsers();
+            setupScrollListeners();
+        }
+
+        // Manejar subida de foto
+        async function handlePhotoUpload(userId, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validar que sea imagen
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor selecciona un archivo de imagen');
+                return;
+            }
+
+            try {
+                // Opcional: guardar el icono para mostrar que está subiendo
+                const user = users.find(u => u.id === userId);
+                if (!user) return;
+
+                // Resize image to 200x200 using Canvas
+                const resizedDataUrl = await resizeImage(file, 200, 200);
+
+                // Actualizar usuario
+                user.avatar = resizedDataUrl; // Por ahora usamos data URL, luego implementaremos Firebase Storage
+                user.avatarType = 'photo';
+
+                updateAvatarPreview(userId);
+
+                alert('✅ Foto cargada correctamente');
+            } catch (error) {
+                console.error('Error subiendo foto:', error);
+                alert('❌ Error al cargar la foto');
+            }
+        }
+
+        // Redimensionar imagen usando Canvas
+        function resizeImage(file, maxWidth, maxHeight) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    const img = new Image();
+
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Calculate new dimensions
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height = height * (maxWidth / width);
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width = width * (maxHeight / height);
+                                height = maxHeight;
+                            }
+                        }
+
+                        canvas.width = maxWidth;
+                        canvas.height = maxHeight;
+
+                        const ctx = canvas.getContext('2d');
+
+                        // Fill with white background
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, maxWidth, maxHeight);
+
+                        // Center the image
+                        const x = (maxWidth - width) / 2;
+                        const y = (maxHeight - height) / 2;
+
+                        ctx.drawImage(img, x, y, width, height);
+
+                        // Convert to WebP or fallback to JPEG
+                        const dataUrl = canvas.toDataURL('image/webp', 0.8);
+                        resolve(dataUrl);
+                    };
+
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Actualizar preview del avatar
+        function updateAvatarPreview(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            const preview = document.getElementById(`avatarPreview${userId}`);
+            if (!preview) return;
+
+            if (user.avatarType === 'photo' && user.avatar) {
+                preview.innerHTML = `<img src="${user.avatar}" alt="Avatar"/>`;
+            } else {
+                preview.innerHTML = user.avatar || '👤';
             }
         }
 
@@ -703,4 +1083,5 @@
         window.addEventListener('load', init);
     </script>
 </body>
+
 </html>

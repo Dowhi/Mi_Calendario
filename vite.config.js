@@ -3,11 +3,11 @@ import fs from 'fs';
 import path from 'path';
 
 export default defineConfig({
-    root: 'docs',
+    root: 'web',
     server: {
         port: 3000,
         open: true,
-        hmr: false,
+        hmr: true,
         // Custom middleware to serve large Flutter files as-is
         configureServer(server) {
             server.middlewares.use((req, res, next) => {

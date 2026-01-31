@@ -673,6 +673,7 @@
 
         let db = null; let isFirebaseConnected = false;
         let shiftTemplates = [];
+        let recurringEventsDefinitions = [];
         const usersIndex = new Map(); // userId -> name/color
 
         function goCalendar() { window.location.href = 'calendar.html'; }
@@ -681,6 +682,7 @@
             try {
                 if (!firebase.apps?.length) firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore(); isFirebaseConnected = true;
+                await loadRecurringEvents();
             } catch (e) { console.warn('Firebase init fallback', e); isFirebaseConnected = false; }
         }
 
@@ -693,11 +695,99 @@
         }
 
         async function loadUsers() {
+            // Cargar de local por si acaso
+            const localUsers = localStorage.getItem('users');
+            if (localUsers) {
+                try {
+                    const parsed = JSON.parse(localUsers);
+                    parsed.forEach(u => {
+                        usersIndex.set(String(u.id), u.name || `Usuario ${u.id}`);
+                    });
+                } catch (e) { }
+            }
+
             try {
                 if (!isFirebaseConnected) return;
                 const snap = await db.collection('users').get();
-                snap.docs.forEach(d => { const u = d.data(); usersIndex.set(parseInt(u.id) || parseInt(d.id), u.name || `Usuario ${d.id}`); });
+                snap.docs.forEach(d => {
+                    const u = d.data();
+                    usersIndex.set(String(d.id), u.name || `Usuario ${d.id}`);
+                });
             } catch (e) { /* opcional */ }
+        }
+
+        async function loadRecurringEvents() {
+            if (!isFirebaseConnected) return;
+            try {
+                const snapshot = await db.collection('recurring_events').get();
+                recurringEventsDefinitions = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                console.log('✅ Events recurrentes cargados:', recurringEventsDefinitions.length);
+            } catch (error) {
+                console.error('❌ Error cargando eventos recurrentes:', error);
+            }
+        }
+
+        function checkIfDateMatchesRecurring(eventDef, date) {
+            const dateNormalized = new Date(date);
+            dateNormalized.setHours(0, 0, 0, 0);
+
+            let eventStart;
+            if (eventDef.startDate && eventDef.startDate.toDate) {
+                const firestoreDate = eventDef.startDate.toDate();
+                const dateStr = firestoreDate.toISOString().split('T')[0];
+                eventStart = new Date(dateStr);
+            } else if (eventDef.startDate instanceof Date) {
+                eventStart = new Date(eventDef.startDate);
+            } else if (typeof eventDef.startDate === 'string') {
+                eventStart = new Date(eventDef.startDate);
+            } else {
+                return false;
+            }
+            eventStart.setHours(0, 0, 0, 0);
+
+            if (dateNormalized < eventStart) return false;
+
+            if (eventDef.endDate) {
+                let eventEnd;
+                if (eventDef.endDate.toDate) {
+                    const firestoreEndDate = eventDef.endDate.toDate();
+                    const dateStr = firestoreEndDate.toISOString().split('T')[0];
+                    eventEnd = new Date(dateStr);
+                } else if (eventDef.endDate instanceof Date) {
+                    eventEnd = new Date(eventDef.endDate);
+                } else {
+                    eventEnd = new Date(eventDef.endDate);
+                }
+                eventEnd.setHours(23, 59, 59, 999);
+                if (dateNormalized > eventEnd) return false;
+            }
+
+            const daysSinceStart = Math.floor((dateNormalized - eventStart) / (1000 * 60 * 60 * 24));
+
+            switch (eventDef.recurrenceType) {
+                case 'daily': return true;
+                case 'weekly': return daysSinceStart % 7 === 0;
+                case 'monthly': return dateNormalized.getDate() === eventStart.getDate();
+                case 'yearly': return dateNormalized.getMonth() === eventStart.getMonth() && dateNormalized.getDate() === eventStart.getDate();
+                case 'custom':
+                    const interval = eventDef.customInterval || 1;
+                    const unit = eventDef.customUnit || 'days';
+                    let shouldMatch = false;
+                    if (unit === 'days') shouldMatch = daysSinceStart % interval === 0;
+                    else if (unit === 'weeks') shouldMatch = daysSinceStart % (interval * 7) === 0;
+                    else if (unit === 'months') {
+                        const monthDiff = (date.getFullYear() - eventStart.getFullYear()) * 12 + (date.getMonth() - eventStart.getMonth());
+                        shouldMatch = monthDiff % interval === 0;
+                    }
+                    if (shouldMatch && eventDef.customDaysOfWeek && eventDef.customDaysOfWeek.length > 0) {
+                        shouldMatch = eventDef.customDaysOfWeek.includes(date.getDay());
+                    }
+                    return shouldMatch;
+                default: return false;
+            }
         }
 
         function formatDateKey(d) { const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), da = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${da}`; }
@@ -717,13 +807,40 @@
             const out = {};
             if (isFirebaseConnected) {
                 const ops = []; const cur = new Date(d1);
-                while (cur <= d2) { const key = formatDateKey(cur); ops.push(db.collection('calendar_events').doc(key).get().then(doc => { out[key] = doc.exists ? (doc.data().events || []) : []; })); cur.setDate(cur.getDate() + 1); }
+                while (cur <= d2) {
+                    const k = formatDateKey(cur);
+                    ops.push(db.collection('calendar_events').doc(k).get().then(doc => {
+                        out[k] = doc.exists ? (doc.data().events || []) : [];
+                    }));
+                    cur.setDate(cur.getDate() + 1);
+                }
                 await Promise.all(ops);
             } else {
                 const all = JSON.parse(localStorage.getItem('calendar_events') || '{}');
                 const cur = new Date(d1);
-                while (cur <= d2) { const key = formatDateKey(cur); out[key] = all[key] || []; cur.setDate(cur.getDate() + 1); }
+                while (cur <= d2) { const k = formatDateKey(cur); out[k] = all[k] || []; cur.setDate(cur.getDate() + 1); }
             }
+
+            // Aplicar eventos recurrentes
+            Object.keys(out).forEach(k => {
+                const date = parseKey(k);
+                recurringEventsDefinitions.forEach(def => {
+                    if (checkIfDateMatchesRecurring(def, date)) {
+                        const exists = out[k].some(e => e.type === 'recurring' && e.recurringEventId === def.id);
+                        if (!exists) {
+                            out[k].push({
+                                type: 'recurring',
+                                recurringEventId: def.id,
+                                text: def.title, // IMPORTANTE: Aquí usamos 'text' para que computeStats lo use como key
+                                title: def.title,
+                                userId: def.userId,
+                                timestamp: Date.now()
+                            });
+                        }
+                    }
+                });
+            });
+
             statsCache.set(key, { map: out, acc: null, at: Date.now() });
             return out;
         }
@@ -758,7 +875,7 @@
             // Acumula por turno (text/shiftId) y calcula duración usando timeSlots si existen
             const acc = {};
             Object.values(map).forEach(events => {
-                events.filter(e => e.type !== 'note').forEach(e => {
+                events.filter(e => e.type !== 'note' && e.type !== 'recurring').forEach(e => {
                     const key = e.shiftId || e.text || 'Turno';
                     if (!acc[key]) acc[key] = { count: 0, mins: 0, sample: e };
                     acc[key].count++;
@@ -849,8 +966,8 @@
 
             Object.entries(acc).forEach(([key, info]) => {
                 const tmpl = shiftTemplates.find(t => t.id === info.sample?.shiftId || t.name === info.sample?.text || t.abbreviation === info.sample?.text);
-                const color = tmpl?.backgroundColor || tmpl?.colorHex || tmpl?.color || '#3B82F6';
-                const text = tmpl?.abbreviation || tmpl?.name || info.sample?.text || key;
+                const color = tmpl?.backgroundColor || tmpl?.colorHex || tmpl?.color || (info.sample?.userColor || '#3B82F6');
+                const text = tmpl?.abbreviation || tmpl?.name || info.sample?.text || (key === 'Turno' ? 'Turno Desconocido' : key);
                 const isSelected = selectedShifts.has(key);
 
                 if (isSelected) {

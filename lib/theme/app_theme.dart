@@ -25,6 +25,39 @@ class AppTheme {
   static const Color _textSecondary = Color(0xFF666666);          // Texto secundario
   static const Color _textTertiary = Color(0xFF999999);           // Texto terciario
   
+  // Colores para Glassmorphism
+  static const Color _glassLight = Color(0x40FFFFFF);             // Vidrio claro (25% opacidad)
+  static const Color _glassDark = Color(0x30000000);              // Vidrio oscuro (19% opacidad)
+  static const Color _glassBorder = Color(0x40FFFFFF);            // Borde de vidrio
+  
+  // Gradientes dinámicos según hora del día
+  static List<Color> getMorningGradient() => [
+    const Color(0xFFE3F2FD), // Azul muy claro
+    const Color(0xFFFFFDE7), // Amarillo muy claro
+  ];
+  
+  static List<Color> getAfternoonGradient() => [
+    const Color(0xFFFFF3E0), // Naranja muy claro
+    const Color(0xFFFFFDE7), // Amarillo muy claro
+  ];
+  
+  static List<Color> getEveningGradient() => [
+    const Color(0xFFE1BEE7), // Morado claro
+    const Color(0xFFBBDEFB), // Azul claro
+  ];
+  
+  // Obtener gradiente según la hora actual
+  static List<Color> getTimeBasedGradient() {
+    final hour = DateTime.now().hour;
+    if (hour >= 6 && hour < 12) {
+      return getMorningGradient();
+    } else if (hour >= 12 && hour < 18) {
+      return getAfternoonGradient();
+    } else {
+      return getEveningGradient();
+    }
+  }
+  
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -101,13 +134,14 @@ class AppTheme {
         thickness: 1,
         color: Color(0xFFDDDDDD),
       ),
-      // Cards
+      // Cards (base - puede ser envuelto en GlassmorphicCard para efecto premium)
       cardTheme: CardThemeData(
-        elevation: 1,
+        elevation: 2, // Sombra más suave
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
         color: _bgSecondary,
+        shadowColor: Colors.black.withOpacity(0.08), // Sombra más sutil
       ),
       // Dialog
       dialogTheme: DialogThemeData(
