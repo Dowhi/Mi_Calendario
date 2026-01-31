@@ -4164,6 +4164,18 @@
                 const cell = container.lastElementChild;
                 cell.classList.add('mini-calendar-cell-fixed'); // Clase para CSS control
 
+                // Determinamos estilo basado en TIEMPO (Pasado vs Futuro)
+                // Normalizamos fechas para comparar solo días
+                const checkDate = new Date(date);
+                checkDate.setHours(0, 0, 0, 0);
+                const todayNorm = new Date();
+                todayNorm.setHours(0, 0, 0, 0);
+
+                const isPast = checkDate < todayNorm;
+
+                // USER REQUEST: Tono oscuro para pasado, claro para futuro
+                const bgColor = isPast ? '#f2f2f2' : '#ffffff'; // Gris claro para pasado, Blanco para hoy/futuro
+
                 // Estilos inline forzados para garantizar fix visual y limpieza
                 cell.style.minHeight = '120px';
                 cell.style.maxHeight = '120px';
@@ -4171,21 +4183,23 @@
                 cell.style.display = 'flex';
                 cell.style.flexDirection = 'column';
                 cell.style.justifyContent = 'flex-start';
-                cell.style.backgroundColor = isOtherMonth ? 'rgba(0,0,0,0.03)' : '#fff';
+                cell.style.backgroundColor = bgColor;
 
-                // LIMPIEZA DE TURNO: Forzar fondo blanco aunque tenga turno asignado
-                // Esto "tranquiliza" la vista de inicio al quitar los bloques de colores fuertes
-                if (!isOtherMonth) {
-                    cell.style.background = '#fff';
-                    // Asegurar que el número tenga color legible
-                    const dayNumber = cell.querySelector('.year-day-number') || cell.querySelector('.calendar-day-number'); // Ajuste selector x si acaso
-                    if (dayNumber) {
-                        dayNumber.style.color = '#333';
-                        dayNumber.style.textShadow = 'none';
-                        dayNumber.style.backgroundColor = 'transparent';
-                    }
+                // LIMPIEZA DE TURNO Y APLICACIÓN DE COLOR FONDO
+                // Forzamos el color calculado, ignorando si es 'otherMonth' o si tiene turno
+                cell.style.background = bgColor;
+
+                // Asegurar que el número tenga color legible
+                const dayNumber = cell.querySelector('.year-day-number') || cell.querySelector('.calendar-day-number');
+                if (dayNumber) {
+                    dayNumber.style.color = '#333';
+                    dayNumber.style.textShadow = 'none';
+                    dayNumber.style.backgroundColor = 'transparent';
+                    // Si es pasado, quizás opacar un poco el número
+                    if (isPast) dayNumber.style.opacity = '0.7';
                 }
             }
+        }
         }
 
         // Renderizar vista de inicio con saludos dinámicos y card de cumpleaños
