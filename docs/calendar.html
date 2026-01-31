@@ -2790,6 +2790,129 @@
                 background: rgba(255, 255, 255, 0.95);
             }
         }
+
+        /* Mini Calendario 3 Semanas */
+        .mini-calendar-container {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mini-week-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .mini-day-header {
+            font-size: 10px;
+            font-weight: 700;
+            text-align: center;
+            color: #5c6bc0;
+            text-transform: uppercase;
+        }
+
+        .mini-day-cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 4px 2px;
+            font-size: 11px;
+            font-weight: 600;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .mini-day-cell.today {
+            background: #e8eaf6;
+            border: 1px solid #3f51b5;
+        }
+
+        .mini-day-cell.other-month {
+            opacity: 0.4;
+        }
+
+        .mini-day-number {
+            margin-bottom: 2px;
+        }
+
+        .mini-day-indicators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .mini-indicator-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+        }
+
+        .mini-indicator-shift {
+            width: 100%;
+            height: 3px;
+            border-radius: 1px;
+            margin-top: 1px;
+        }
+
+        .upcoming-events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .modern-event-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .modern-event-item:active {
+            transform: scale(0.98);
+        }
+
+        .modern-event-time {
+            font-size: 13px;
+            font-weight: 700;
+            color: #3f51b5;
+            min-width: 45px;
+        }
+
+        .modern-event-color-bar {
+            width: 4px;
+            height: 24px;
+            border-radius: 2px;
+        }
+
+        .modern-event-info {
+            flex: 1;
+        }
+
+        .modern-event-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .modern-event-category {
+            font-size: 11px;
+            color: #888;
+        }
     </style>
 </head>
 
@@ -2845,15 +2968,18 @@
         </div>
 
         <section class="next-event-section fade-in delay-2">
-            <h3>Próximo Evento / Dato</h3>
-            <div class="glass-card event-card-highlight" id="modernNextEventCard">
-                <div class="empty-event-text">No hay más eventos hoy</div>
+            <h3>Eventos de Hoy</h3>
+            <div id="modernEventsList" class="upcoming-events-list">
+                <div class="empty-event-text">No hay eventos para hoy</div>
             </div>
         </section>
 
         <section class="quick-actions-section fade-in delay-2">
-            <h3>Acciones Rápidas</h3>
-            <div class="quick-actions-grid">
+            <h3>Vista 3 Semanas</h3>
+            <div id="modernThreeWeekCalendar" class="glass-card mini-calendar-container">
+                <!-- Se carga dinámicamente -->
+            </div>
+            <div class="quick-actions-grid" style="margin-top: 16px;">
                 <button class="action-icon-btn" onclick="openDayModal(new Date())">
                     <span class="action-emoji">➕</span>
                     <span class="action-label">Nuevo</span>
@@ -3751,7 +3877,6 @@
             const user = users.find(u => String(u.id) === String(currentUserId)) ||
                 { name: 'Usuario', color: '#3f51b5', avatar: '👤', avatarType: 'emoji' };
             const userName = user.name || 'Usuario';
-            const firstName = userName.split(' ')[0];
 
             // 2. Actualizar Cabecera Moderna (Modern Premium)
             const now = new Date();
@@ -3763,7 +3888,7 @@
 
             const greetingEl = document.getElementById('modernGreeting');
             if (greetingEl) {
-                greetingEl.innerHTML = `${greeting} <br><span class="user-name-highlight">${firstName}</span>`;
+                greetingEl.innerHTML = `${greeting} <br><span class="user-name-highlight">${userName}</span>`;
             }
 
             // Fecha Moderna
@@ -3782,7 +3907,7 @@
                     avatarEl.style.backgroundPosition = 'center';
                     avatarEl.style.border = '2px solid #5c6bc0';
                 } else {
-                    avatarEl.textContent = user.avatar || firstName.charAt(0).toUpperCase();
+                    avatarEl.textContent = user.avatar || userName.charAt(0).toUpperCase();
                     avatarEl.style.background = `linear-gradient(45deg, ${user.color || '#3f51b5'}, #5c6bc0)`;
                     avatarEl.style.backgroundImage = 'none';
                     avatarEl.style.border = 'none';
@@ -3800,9 +3925,10 @@
                 document.getElementById('medievalInitial').textContent = userName.charAt(0).toUpperCase();
             }
 
-            // 4. Actualizar Contadores y Próximos Eventos
+            // 4. Actualizar Contadores, Lista de Eventos y Calendario 3 Semanas
             await updateDashboardCounts();
-            await updateNextEventCard();
+            await updateHomeEventsList();
+            await renderModernThreeWeekCalendar();
 
             // 5. Cargar lista de eventos para hoy
             const todayEvents = await getEventsForDate(now);
@@ -3874,44 +4000,127 @@
             if (shiftCountEl) shiftCountEl.textContent = shifts.length;
         }
 
-        async function updateNextEventCard() {
+        async function updateHomeEventsList() {
             const now = new Date();
-            const todayStr = formatDateKey(now);
             const events = await getEventsForDate(now);
+            const container = document.getElementById('modernEventsList');
+            if (!container) return;
 
-            // Filter future events only? Or just showing the most relevant one for today
-            // Let's show the first event that hasn't passed today, or just the first one if all passed
-
-            // Sort by time if they have time
-            // Assuming events structure has 'time' field HH:MM
-
-            const sortedEvents = events.filter(e => e.type === 'note').sort((a, b) => {
-                if (!a.time) return 1;
-                if (!b.time) return -1;
-                return a.time.localeCompare(b.time);
+            // Filtrar y ordenar eventos (notas/eventos reales primero)
+            const sortedEvents = events.sort((a, b) => {
+                const timeA = a.time || '23:59';
+                const timeB = b.time || '23:59';
+                return timeA.localeCompare(timeB);
             });
 
-            const nextEvent = sortedEvents.find(e => {
-                if (!e.time) return false;
-                const [h, m] = e.time.split(':').map(Number);
-                const eventDate = new Date();
-                eventDate.setHours(h, m, 0, 0);
-                return eventDate > now;
-            }) || sortedEvents[0]; // Fallback to first event of day if all passed
+            if (sortedEvents.length === 0) {
+                container.innerHTML = `<div class="empty-event-text">No hay eventos para hoy</div>`;
+                return;
+            }
 
-            const card = document.getElementById('modernNextEventCard');
-            if (!card) return;
+            container.innerHTML = '';
+            sortedEvents.forEach(event => {
+                const item = document.createElement('div');
+                item.className = 'modern-event-item';
+                item.onclick = () => openDayModal(now);
 
-            if (nextEvent) {
-                card.innerHTML = `
-                    <div class="time-pillar">${nextEvent.time || '--:--'}</div>
-                    <div class="event-details">
-                        <h4>${nextEvent.text || 'Evento'}</h4>
-                        <span class="location">${nextEvent.category || 'Sin categoría'}</span>
+                const time = event.time || '--:--';
+                const color = event.userColor || getUserColor(event.userId);
+                const title = event.text || (event.shiftId ? 'Turno' : 'Sin título');
+                const category = event.category || (event.type === 'note' ? 'Nota' : 'Evento');
+
+                item.innerHTML = `
+                    <div class="modern-event-time">${time}</div>
+                    <div class="modern-event-color-bar" style="background-color: ${color}"></div>
+                    <div class="modern-event-info">
+                        <h4 class="modern-event-title">${title}</h4>
+                        <span class="modern-event-category">${category}</span>
                     </div>
                 `;
-            } else {
-                card.innerHTML = `<div class="empty-event-text">No hay más eventos programados para hoy</div>`;
+                container.appendChild(item);
+            });
+        }
+
+        async function renderModernThreeWeekCalendar() {
+            const container = document.getElementById('modernThreeWeekCalendar');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            // Header con días de la semana
+            const weekDays = getWeekDays();
+            const headerRow = document.createElement('div');
+            headerRow.className = 'mini-week-row';
+            weekDays.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'mini-day-header';
+                dayHeader.textContent = day;
+                headerRow.appendChild(dayHeader);
+            });
+            container.appendChild(headerRow);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Calcular inicio (lunes de la semana pasada)
+            const startOfRange = new Date(today);
+            const dayOfWeek = today.getDay();
+            const diffToMonday = (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+            startOfRange.setDate(today.getDate() - diffToMonday - 7); // Retroceder a lunes pasado
+
+            // Generar 3 semanas (21 días)
+            for (let w = 0; w < 3; w++) {
+                const weekRow = document.createElement('div');
+                weekRow.className = 'mini-week-row';
+
+                for (let d = 0; d < 7; d++) {
+                    const currentDay = new Date(startOfRange);
+                    currentDay.setDate(startOfRange.getDate() + (w * 7) + d);
+
+                    const isToday = currentDay.getTime() === today.getTime();
+                    const isOtherMonth = currentDay.getMonth() !== today.getMonth();
+
+                    const cell = document.createElement('div');
+                    cell.className = `mini-day-cell ${isToday ? 'today' : ''} ${isOtherMonth ? 'other-month' : ''}`;
+                    cell.onclick = () => {
+                        currentDate = new Date(currentDay);
+                        showTab('calendar');
+                        renderCalendar();
+                    };
+
+                    cell.innerHTML = `<span class="mini-day-number">${currentDay.getDate()}</span>`;
+
+                    // Indicadores (turnos y eventos)
+                    const indicators = document.createElement('div');
+                    indicators.className = 'mini-day-indicators';
+
+                    // Obtener eventos sincrónicamente del caché
+                    const dayEvents = getEventsForDateCached(currentDay);
+
+                    // Mostrar turnos como barras de color
+                    const shifts = dayEvents.filter(e => e.type !== 'note');
+                    shifts.forEach(s => {
+                        const shiftColor = s.color || getUserColor(s.userId);
+                        const shiftBar = document.createElement('div');
+                        shiftBar.className = 'mini-indicator-shift';
+                        shiftBar.style.backgroundColor = shiftColor;
+                        indicators.appendChild(shiftBar);
+                    });
+
+                    // Mostrar notas como puntos
+                    const notes = dayEvents.filter(e => e.type === 'note');
+                    notes.forEach(n => {
+                        const noteColor = n.userColor || getUserColor(n.userId);
+                        const dot = document.createElement('div');
+                        dot.className = 'mini-indicator-dot';
+                        dot.style.backgroundColor = noteColor;
+                        indicators.appendChild(dot);
+                    });
+
+                    cell.appendChild(indicators);
+                    weekRow.appendChild(cell);
+                }
+                container.appendChild(weekRow);
             }
         }
 
