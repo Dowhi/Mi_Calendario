@@ -2311,6 +2311,21 @@
             animation-delay: 0.2s;
         }
 
+        /* Mini-calendar styling override: No background color for shift blocks */
+        .mini-calendar-cell-fixed .calendar-day {
+            background: #fff !important;
+            position: relative;
+        }
+
+        .mini-calendar-cell-fixed .calendar-day-number {
+            background: transparent !important;
+            color: inherit !important;
+            text-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            width: auto !important;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -4150,14 +4165,27 @@
                 const cell = container.lastElementChild;
                 cell.classList.add('mini-calendar-cell-fixed'); // Clase para CSS control
 
-                // Estilos inline forzados para garantizar fix
+                // Estilos inline forzados para garantizar fix visual y limpieza
                 cell.style.minHeight = '120px';
-                cell.style.maxHeight = '120px'; // Altura fija estricta
-                cell.style.overflow = 'hidden'; // Ocultar desbordamiento
+                cell.style.maxHeight = '120px';
+                cell.style.overflow = 'hidden';
                 cell.style.display = 'flex';
                 cell.style.flexDirection = 'column';
                 cell.style.justifyContent = 'flex-start';
                 cell.style.backgroundColor = isOtherMonth ? 'rgba(0,0,0,0.03)' : '#fff';
+
+                // LIMPIEZA DE TURNO: Forzar fondo blanco aunque tenga turno asignado
+                // Esto "tranquiliza" la vista de inicio al quitar los bloques de colores fuertes
+                if (!isOtherMonth) {
+                    cell.style.background = '#fff';
+                    // Asegurar que el número tenga color legible
+                    const dayNumber = cell.querySelector('.year-day-number') || cell.querySelector('.calendar-day-number'); // Ajuste selector x si acaso
+                    if (dayNumber) {
+                        dayNumber.style.color = '#333';
+                        dayNumber.style.textShadow = 'none';
+                        dayNumber.style.backgroundColor = 'transparent';
+                    }
+                }
             }
         }
 
@@ -7814,13 +7842,21 @@
         })();
 
         // Asegurar que los botones de acción sean visibles
+        // Asegurar que los botones de acción sean visibles SOLO si no estamos en Home
         window.addEventListener('DOMContentLoaded', () => {
             const bottomActions = document.querySelector('.bottom-actions');
             if (bottomActions) {
-                bottomActions.style.display = 'flex';
+                // Verificar vista actual (default es home usualmente)
+                // Si hay un contenedor homeView visible, ocultar barra
+                const homeView = document.getElementById('homeView');
+                if (homeView && homeView.style.display !== 'none') {
+                    bottomActions.style.display = 'none';
+                } else {
+                    bottomActions.style.display = 'flex';
+                }
                 bottomActions.style.visibility = 'visible';
                 bottomActions.style.opacity = '1';
-                console.log('✅ Botones de acción asegurados como visibles');
+                console.log('✅ Estado inicial de botones de acción ajustado según vista');
             } else {
                 console.error('❌ No se encontró la barra de botones');
             }
