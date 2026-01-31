@@ -3004,9 +3004,20 @@
                 <div class="count-badge" id="dashEventsCount">0</div>
                 <span class="summary-label">Eventos Hoy</span>
             </div>
-            <div class="glass-card summary-card" onclick="showTab('shifts')">
-                <div class="count-badge" id="dashShiftsCount">0</div>
-                <span class="summary-label">Turno</span>
+            <div class="glass-card summary-card" id="weatherWidget"
+                style="padding: 12px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; cursor: pointer;"
+                onclick="fetchWeather()">
+                <div style="font-size: 11px; opacity: 0.8; letter-spacing: 1px;">SEVILLA</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="weatherIcon" style="font-size: 26px;">Thinking...</span>
+                        <span id="weatherTemp" style="font-size: 24px; font-weight: 800;">--°</span>
+                    </div>
+                    <div
+                        style="font-size: 12px; color: #4fc3f7; background: rgba(79, 195, 247, 0.1); padding: 4px 8px; border-radius: 12px; font-weight: 600;">
+                        <span id="weatherRain">--%</span> 💧
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -4127,19 +4138,73 @@
 
                 const isOtherMonth = date.getMonth() !== today.getMonth();
 
-                // Reutilizamos renderDay para obtener EXACTAMENTE el mismo diseño
+                // Reutilizamos renderDay pero con contenedor específico para estilos
+                const cellContainer = document.createElement('div');
+                cellContainer.className = 'mini-calendar-cell-wrapper'; // Nueva clase wrapper
+                cellContainer.style.overflow = 'hidden';
+
+                // Renderizamos dentro de este wrapper
                 renderDay(container, date, isOtherMonth);
 
-                // Ajuste post-render para el mini-calendario
+                // Ajuste post-render para el mini-calendario (aplicado al elemento insertado por renderDay)
                 const cell = container.lastElementChild;
-                cell.style.minHeight = '120px'; // Un poco más alto para ver texto de notas
-                cell.style.maxHeight = '150px';
-                cell.style.overflow = 'hidden';
+                cell.classList.add('mini-calendar-cell-fixed'); // Clase para CSS control
+
+                // Estilos inline forzados para garantizar fix
+                cell.style.minHeight = '120px';
+                cell.style.maxHeight = '120px'; // Altura fija estricta
+                cell.style.overflow = 'hidden'; // Ocultar desbordamiento
+                cell.style.display = 'flex';
+                cell.style.flexDirection = 'column';
+                cell.style.justifyContent = 'flex-start';
                 cell.style.backgroundColor = isOtherMonth ? 'rgba(0,0,0,0.03)' : '#fff';
             }
         }
 
         // Renderizar vista de inicio con saludos dinámicos y card de cumpleaños
+
+        // --- Weather Widget Logic ---
+        async function fetchWeather() {
+            const iconEl = document.getElementById('weatherIcon');
+            const tempEl = document.getElementById('weatherTemp');
+            const rainEl = document.getElementById('weatherRain');
+            if (!iconEl) return;
+
+            try {
+                // Sevilla Coordinates
+                const lat = 37.3828;
+                const lon = -5.9732;
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=precipitation_probability_max&timezone=Europe%2FMadrid`;
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.current_weather) {
+                    const temp = Math.round(data.current_weather.temperature);
+                    const code = data.current_weather.weathercode;
+                    const rainProb = data.daily && data.daily.precipitation_probability_max ? data.daily.precipitation_probability_max[0] : 0;
+
+                    // Map WMO codes to icons
+                    let icon = '☀️';
+                    if (code >= 1 && code <= 3) icon = '⛅';
+                    if (code >= 45 && code <= 48) icon = '🌫️';
+                    if (code >= 51 && code <= 67) icon = '🌧️';
+                    if (code >= 71 && code <= 77) icon = '❄️';
+                    if (code >= 80 && code <= 82) icon = '🌦️';
+                    if (code >= 95) icon = '⚡';
+
+                    tempEl.textContent = `${temp}°`;
+                    iconEl.textContent = icon;
+                    rainEl.textContent = `${rainProb}%`;
+                }
+            } catch (error) {
+                console.error('Weather fetch error:', error);
+                iconEl.textContent = '❌';
+            }
+        }
+
+        // Auto-fetch weather regarding init
+        setTimeout(fetchWeather, 2000);
 
 
         // Gestos swipe para cambio de mes (solo en móvil)
@@ -4219,6 +4284,16 @@
             if (calendarView) calendarView.style.display = 'none';
             if (yearView) yearView.style.display = 'none';
             if (monthNav) monthNav.style.display = 'none';
+
+            // Gestión de barra inferior (ocultar en Home, mostrar en otros)
+            const bottomActions = document.querySelector('.bottom-actions');
+            if (bottomActions) {
+                if (tab === 'home') {
+                    bottomActions.style.display = 'none';
+                } else {
+                    bottomActions.style.display = 'flex';
+                }
+            }
 
             if (tab === 'home') {
                 if (homeView) {
