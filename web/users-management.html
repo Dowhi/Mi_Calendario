@@ -963,6 +963,7 @@
                 console.log('✅ Todos los usuarios guardados en Firebase');
             } catch (error) {
                 console.error('❌ Error guardando usuarios:', error);
+                alert('Error al guardar en Firebase: ' + error.message);
                 console.error('Datos de usuarios:', users);
                 throw error;
             }
