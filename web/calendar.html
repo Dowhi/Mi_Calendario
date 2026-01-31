@@ -4845,7 +4845,7 @@
                         }
                         // Si tiene lista de usuarios visibles, verificar si el usuario actual está incluido
                         if (note.visibleTo && Array.isArray(note.visibleTo)) {
-                            if (!note.visibleTo.includes(currentUserId)) {
+                            const visibleList = note.visibleTo.map(id => String(id)); if (!visibleList.includes(String(currentUserId))) {
                                 return; // Omitir si no está en la lista de visibles
                             }
                         } else if (!note.private) {
