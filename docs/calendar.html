@@ -1961,14 +1961,13 @@
         .bottom-actions {
             background: white;
             padding: 0;
-            display: flex !important;
+            display: none;
+            /* Hidden by default */
             gap: 0;
             flex-shrink: 0;
             min-height: 40px;
             position: relative;
-            z-index: 2000 !important;
-            visibility: visible !important;
-            opacity: 1 !important;
+            z-index: 2000;
         }
 
         .action-btn {
@@ -4316,9 +4315,13 @@
             // Gestión de barra inferior (ocultar en Home, mostrar en otros)
             const bottomActions = document.querySelector('.bottom-actions');
             if (bottomActions) {
-                if (tab === 'home') {
+                if (tab === 'home' || tab === 'summary') {
                     bottomActions.style.display = 'none';
+                    // Force hide override
+                    bottomActions.setAttribute('style', 'display: none !important');
                 } else {
+                    bottomActions.style.display = 'flex';
+                    bottomActions.removeAttribute('style'); // Remove inline style to allow class/computed style if needed, or re-apply flex
                     bottomActions.style.display = 'flex';
                 }
             }
@@ -7843,23 +7846,34 @@
 
         // Asegurar que los botones de acción sean visibles
         // Asegurar que los botones de acción sean visibles SOLO si no estamos en Home
+        // Asegurar comportamiento inicial de botones de acción
         window.addEventListener('DOMContentLoaded', () => {
+            // 1. Ocultar inicialmente para evitar flash
             const bottomActions = document.querySelector('.bottom-actions');
             if (bottomActions) {
-                // Verificar vista actual (default es home usualmente)
-                // Si hay un contenedor homeView visible, ocultar barra
-                const homeView = document.getElementById('homeView');
-                if (homeView && homeView.style.display !== 'none') {
-                    bottomActions.style.display = 'none';
-                } else {
-                    bottomActions.style.display = 'flex';
-                }
-                bottomActions.style.visibility = 'visible';
-                bottomActions.style.opacity = '1';
-                console.log('✅ Estado inicial de botones de acción ajustado según vista');
-            } else {
-                console.error('❌ No se encontró la barra de botones');
+                bottomActions.style.display = 'none';
             }
+
+            // 2. Comprobar vista real tras delay de inicialización
+            setTimeout(() => {
+                const homeView = document.getElementById('homeView');
+                const bActions = document.querySelector('.bottom-actions');
+
+                if (bActions) {
+                    // Si homeView NO está oculto (es decir, estamos en home), ocultamos barra agresivamente
+                    const isHomeVisible = homeView && getComputedStyle(homeView).display !== 'none';
+
+                    if (isHomeVisible) {
+                        bActions.style.display = 'none';
+                        bActions.setAttribute('style', 'display: none !important');
+                        console.log('✅ Inicio detectado: Barra inferior ocultada.');
+                    } else {
+                        // Si estamos en otra vista (calendar/year cargado por url?), mostramos
+                        bActions.removeAttribute('style'); // Quitar el !important inline
+                        bActions.style.display = 'flex';
+                    }
+                }
+            }, 300); // Dar tiempo a que init() corra y setee la vista por defecto
         });
 
         // Script de depuración para verificar botones
