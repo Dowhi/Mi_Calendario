@@ -42,6 +42,22 @@
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .firebase-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #FF5252;
+            margin-left: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: inline-block;
+        }
+
+        .firebase-status.connected {
+            background: #4CAF50;
+            box-shadow: 0 0 5px #4CAF50;
         }
 
         .header-arrow {
@@ -468,7 +484,10 @@
     <!-- Header -->
     <div class="header">
         <button class="header-arrow" onclick="goBack()">←</button>
-        <div class="header-title">Gestión de Usuarios</div>
+        <div class="header-title">
+            GESTIÓN DE USUARIOS
+            <span id="firebaseStatusDot" class="firebase-status" title="Desconectado"></span>
+        </div>
         <div class="header-action" style="visibility: hidden;"></div>
     </div>
 
@@ -537,11 +556,21 @@
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
                 isFirebaseConnected = true;
+                const dot = document.getElementById('firebaseStatusDot');
+                if (dot) {
+                    dot.classList.add('connected');
+                    dot.title = 'Firebase Conectado';
+                }
                 console.log('✅ Firebase conectado');
                 return true;
             } catch (error) {
                 console.error('❌ Error conectando Firebase:', error);
                 isFirebaseConnected = false;
+                const dot = document.getElementById('firebaseStatusDot');
+                if (dot) {
+                    dot.classList.remove('connected');
+                    dot.title = 'Error de conexión: ' + error.message;
+                }
                 return false;
             }
         }
