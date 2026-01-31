@@ -5463,7 +5463,9 @@
                         }
                         // Si tiene lista de usuarios visibles, verificar si el usuario actual está incluido
                         if (note.visibleTo && Array.isArray(note.visibleTo)) {
-                            if (!note.visibleTo.includes(currentUserId)) {
+                            // Fix: Robust check for string/number types
+                            const visibleList = note.visibleTo.map(id => String(id));
+                            if (!visibleList.includes(String(currentUserId))) {
                                 return; // Omitir si no está en la lista de visibles
                             }
                         } else if (!note.private) {
@@ -7704,7 +7706,7 @@
                 elemento: bottomActions,
                 display: bottomActions ? getComputedStyle(bottomActions).display : 'N/A',
                 visibility: bottomActions ? getComputedStyle(bottomActions).visibility : 'N/A',
-                opacity: bottomActions ? getComputedStyle(bottomActions).opacity : 'N/A',
+                opacity: bottomActions ? getComputedStyle(bottomActions).ity',
                 height: bottomActions ? getComputedStyle(bottomActions).height : 'N/A',
                 zIndex: bottomActions ? getComputedStyle(bottomActions).zIndex : 'N/A',
             });
