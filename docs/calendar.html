@@ -35,6 +35,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Almendra:ital,wght@0,400;0,703;1,400&family=Cinzel:wght@400..900&family=MedievalSharp&family=UnifrakturMaguntia&display=swap');
 
@@ -4112,17 +4113,34 @@
             // Chameleon Theme (Idea 11)
             document.documentElement.style.setProperty('--user-theme-color', user.color || '#3f51b5');
 
-            // 2. Actualizar Cabecera Moderna (Modern Premium)
+            // 2. Actualizar Cabecera Moderna (Elite Features: Dynamic Theme & Emojis)
             const now = new Date();
             const hour = now.getHours();
+
+            // Dynamic Greeting & Emoji logic
             let greeting = 'Hola,';
-            if (hour >= 5 && hour < 12) greeting = '¡Buenos días,';
-            else if (hour >= 12 && hour < 20) greeting = '¡Buenas tardes,';
-            else greeting = '¡Buenas noches,';
+            let emoji = '👋';
+            if (hour >= 5 && hour < 12) { greeting = '¡Buenos días,'; emoji = '☕'; }
+            else if (hour >= 12 && hour < 20) { greeting = '¡Buenas tardes,'; emoji = '🌞'; }
+            else { greeting = '¡Buenas noches,'; emoji = '🌙'; }
+
+            // Extra contextual nuances
+            if (hour >= 18 && hour < 21) emoji = '🌆'; // Golden Hour
+            if (hour >= 21 || hour < 5) emoji = '😴'; // Late Night
+            if (hour >= 5 && hour < 8) emoji = '🌅';   // Sunrise
+
+            // Elite: Dynamic Time Gradient
+            let gradient = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
+            if (hour >= 5 && hour < 8) gradient = 'linear-gradient(135deg, #FF9E80 0%, #FFD180 100%)'; // Sunrise Peach
+            else if (hour >= 8 && hour < 17) gradient = 'linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)'; // Sky Blue
+            else if (hour >= 17 && hour < 20) gradient = 'linear-gradient(135deg, #FFAB91 0%, #FFCC80 100%)'; // Golden Hour
+            else gradient = 'linear-gradient(135deg, #1A237E 0%, #3949AB 100%)'; // Night Indigo
+
+            document.documentElement.style.setProperty('--modern-gradient', gradient);
 
             const greetingEl = document.getElementById('modernGreeting');
             if (greetingEl) {
-                greetingEl.innerHTML = `${greeting} <br><span class="user-name-highlight">${userName}</span>`;
+                greetingEl.innerHTML = `${emoji} ${greeting} <br><span class="user-name-highlight">${userName}</span>`;
             }
 
             // Fecha Moderna
@@ -4182,6 +4200,24 @@
             }
             if (document.getElementById('medievalWelcomeStatus')) {
                 document.getElementById('medievalWelcomeStatus').textContent = `TIENES ${count} ${count === 1 ? 'EVENTO' : 'EVENTOS'} PARA HOY.`;
+            }
+
+            // Elite: Birthday Confetti Check
+            const isBirthday = todayEvents.some(e =>
+                (e.text && e.text.toLowerCase().includes('cumple')) ||
+                (e.type === 'birthday')
+            );
+
+            if (isBirthday && typeof confetti === 'function') {
+                console.log('🎉 ¡CUMPLEAÑOS DETECTADO! Lanzando confeti...');
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#3f51b5', '#5c6bc0', '#ff4081', '#7c4dff']
+                    });
+                }, 1000);
             }
 
             // Contenedores de eventos
