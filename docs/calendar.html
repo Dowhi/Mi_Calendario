@@ -2256,15 +2256,41 @@
             height: 100%;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            padding: 12px;
+            padding: 0;
+            /* Full width base */
             padding-bottom: 60px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #333;
         }
+
+        /* Margins for standard content wrappers */
+        .home-header,
+        .dashboard-grid,
+        .next-event-section h3,
+        .quick-actions-section h3 {
+            margin-left: 16px;
+            margin-right: 16px;
+        }
+
+        /* Specifically allow full width for mini-calendar but maybe with slight margin if user requested? 
+           User said: "margenes a ambos lados de la pantalla pero el ancho de la tarjeta del minicalendario no cambie"
+           This likely means: Keep text/cards with margins, but let the calendar span wide or fill the available margin-ed space?
+           "no cambie" related to "ocupar todo el ancho" from previous request. 
+           Let's adhere to: General margins 16px. Mini-calendar: FULL WIDTH (margin 0).
+        */
+        .quick-actions-section .mini-calendar-container {
+            margin-left: 0;
+            margin-right: 0;
+            border-radius: 0;
+            /* Square edges for full bleed */
+            border-left: none;
+            border-right: none;
+        }
+
 
         /* Medieval Theme Specifics */
         body.medieval-theme .modern-home {
@@ -4074,15 +4100,32 @@
             const container = document.getElementById('modernEventsList');
             if (!container) return;
 
-            // Filtrar y ordenar eventos (notas/eventos reales primero)
-            const sortedEvents = events.sort((a, b) => {
+            // Filtrar y ordenar eventos
+            // REGLAS: 
+            // 1. Mostrar SOLO citas/notas y eventos recurrentes (notes, recurring).
+            // 2. EXCLUIR Turnos (shiftId) y Categorías solas ("Evento" sin título real o que sea título de turno).
+
+            const filteredEvents = events.filter(e => {
+                // Si es un turno (tiene shiftId), fuera.
+                if (e.shiftId) return false;
+
+                // Si es tipo 'nota' o 'recurring', dentro.
+                if (e.type === 'note' || e.type === 'recurring') return true;
+
+                // Si tiene texto explícito y NO es un turno, probamos a mostrarlo (citas manuales)
+                if (e.text && !e.shiftId) return true;
+
+                return false;
+            });
+
+            const sortedEvents = filteredEvents.sort((a, b) => {
                 const timeA = a.time || '23:59';
                 const timeB = b.time || '23:59';
                 return timeA.localeCompare(timeB);
             });
 
             if (sortedEvents.length === 0) {
-                container.innerHTML = `<div class="empty-event-text">No hay eventos para hoy</div>`;
+                container.innerHTML = `<div class="empty-event-text" style="grid-column: 1 / -1; padding: 10px;">No hay citas o notas hoy</div>`;
                 return;
             }
 
@@ -4090,19 +4133,26 @@
             sortedEvents.forEach(event => {
                 const item = document.createElement('div');
                 item.className = 'modern-event-item';
+                // Style override for compact 2-column look
+                item.style.padding = '8px';
+                item.style.minHeight = '60px';
+
                 item.onclick = () => openDayModal(now);
 
-                const time = event.time || '--:--';
+                const time = event.time || '';
                 const color = event.userColor || getUserColor(event.userId);
-                const title = event.text || (event.shiftId ? 'Turno' : 'Sin título');
-                const category = event.category || (event.type === 'note' ? 'Nota' : 'Evento');
+                // Si es nota, el título es el texto.
+                const title = event.text || 'Nota';
+                // Simplificar categoría
+                const category = event.type === 'recurring' ? 'Recurrente' : 'Nota/Cita';
 
                 item.innerHTML = `
-                    <div class="modern-event-time">${time}</div>
-                    <div class="modern-event-color-bar" style="background-color: ${color}"></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span class="modern-event-time" style="font-size: 13px;">${time}</span>
+                        <div class="modern-event-color-bar" style="background-color: ${color}; height: 8px; width: 8px; border-radius: 50%; position: static;"></div>
+                    </div>
                     <div class="modern-event-info">
-                        <h4 class="modern-event-title">${title}</h4>
-                        <span class="modern-event-category">${category}</span>
+                        <h4 class="modern-event-title" style="font-size: 13px; line-height: 1.2; max-height: 2.4em; overflow: hidden;">${title}</h4>
                     </div>
                 `;
                 container.appendChild(item);
@@ -4166,15 +4216,16 @@
 
                 // Determinamos estilo basado en TIEMPO (Pasado vs Futuro)
                 // Normalizamos fechas para comparar solo días
-                const checkDate = new Date(date);
-                checkDate.setHours(0, 0, 0, 0);
-                const todayNorm = new Date();
-                todayNorm.setHours(0, 0, 0, 0);
+                // Determinamos estilo basado en TIEMPO (Pasado vs Futuro)
+                // Usamos timestamps planos al medio día para evitar zonas horarias
+                const checkTime = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+                const todayTime = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
 
-                const isPast = checkDate < todayNorm;
+                const isPast = checkTime < todayTime;
 
-                // USER REQUEST: Tono oscuro para pasado, claro para futuro
-                const bgColor = isPast ? '#f2f2f2' : '#ffffff'; // Gris claro para pasado, Blanco para hoy/futuro
+                // USER REQUEST: Tono oscuro (#e0e0e0) para pasado, BLANCO ABSOLUTO para hoy y futuro
+                // NOTA: Ignoramos completamente si es 'otherMonth'. El tiempo manda.
+                const bgColor = isPast ? '#e8e8e8' : '#ffffff';
 
                 // Estilos inline forzados para garantizar fix visual y limpieza
                 cell.style.minHeight = '120px';
@@ -4186,8 +4237,8 @@
                 cell.style.backgroundColor = bgColor;
 
                 // LIMPIEZA DE TURNO Y APLICACIÓN DE COLOR FONDO
-                // Forzamos el color calculado, ignorando si es 'otherMonth' o si tiene turno
-                cell.style.background = bgColor;
+                // Forzamos el color calculado con !important simulado (inline style override)
+                cell.setAttribute('style', cell.getAttribute('style') + `; background: ${bgColor} !important; background-color: ${bgColor} !important;`);
 
                 // Asegurar que el número tenga color legible
                 const dayNumber = cell.querySelector('.year-day-number') || cell.querySelector('.calendar-day-number');
