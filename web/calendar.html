@@ -93,6 +93,51 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
             display: flex;
             flex-direction: column;
+            position: relative;
+        }
+
+        /* 3. Paper Texture (Block B) */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.04;
+            mix-blend-mode: multiply;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* 2. Zen Mode (Block B) */
+        body.zen-mode .header-actions,
+        body.zen-mode .bottom-nav,
+        body.zen-mode .floating-action-button {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        /* 5. Skeleton Loading (Block D) */
+        .skeleton {
+            background: #eee;
+            background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+            background-size: 200% 100%;
+            animation: 1.5s shine linear infinite;
+            border-radius: 4px;
+            color: transparent !important;
+        }
+
+        .skeleton * {
+            visibility: hidden;
+        }
+
+        @keyframes shine {
+            to {
+                background-position-x: -200%;
+            }
         }
 
         /* Header */
@@ -118,6 +163,21 @@
             display: flex;
             gap: 8px;
             align-items: center;
+        }
+
+        /* 2. Zen Mode Toggle (Block B) */
+        .zen-toggle {
+            font-size: 14px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .zen-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .header-btn {
@@ -1451,18 +1511,37 @@
             display: flex;
         }
 
+        /* 1. Stories View - Full Screen Modal (Block B) */
         .notes-modal-content {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
             width: 100%;
-            max-width: 400px;
-            max-height: 90vh;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            position: relative;
-            z-index: 1;
+            height: 100%;
+            /* Full screen */
+            max-width: 100%;
+            border-radius: 0;
+            /* No corners */
+            box-shadow: none;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            /* Spring-like */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 2000;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
         }
 
         /* Contenedor scrollable para el contenido */
@@ -3070,6 +3149,7 @@
     <div class="header">
         <div class="header-title">My Calendar</div>
         <div class="header-actions">
+            <button class="zen-toggle" onclick="toggleZenMode()" title="Modo Zen">🧘</button>
             <button id="undoBtn" class="header-btn" style="display: none; background: #FF9800; color: white;"
                 onclick="performUndo()" title="Deshacer último cambio">↺</button>
             <button class="header-btn" onclick="goBack()">👤</button>
@@ -4170,6 +4250,9 @@
         }
 
         async function updateHomeEventsList() {
+            // Show skeletons before fetching (Block D)
+            showSkeletons();
+
             const now = new Date();
             const events = await getEventsForDate(now);
             const container = document.getElementById('modernEventsList');
@@ -8108,17 +8191,59 @@
             }
         }
 
-        function toggleMedievalTheme() {
-            document.body.classList.toggle('medieval-theme');
-            const isActive = document.body.classList.contains('medieval-theme');
-            localStorage.setItem('medieval_theme', isActive);
+        // Duplicate removed
 
-            // Forzar re-render de Home si estamos ahí
-            if (currentView === 'home') {
-                renderHome();
+
+        // --- Feature: Zen Mode (Block B) ---
+        function toggleZenMode() {
+            document.body.classList.toggle('zen-mode');
+            const isZen = document.body.classList.contains('zen-mode');
+            console.log('Zen Mode:', isZen ? 'ON' : 'OFF');
+            localStorage.setItem('zenMode', isZen);
+            showToast(isZen ? '🧘 Modo Zen activado' : '👀 Modo Zen desactivado');
+        }
+
+        // Restore Zen Mode pref on load
+        if (localStorage.getItem('zenMode') === 'true') {
+            document.body.classList.add('zen-mode');
+        }
+
+        // --- Feature: View Transitions (Block D) ---
+        function safeViewTransition(callback) {
+            if (!document.startViewTransition) {
+                callback();
+                return;
             }
+            document.startViewTransition(callback);
+        }
 
-            showToast(isActive ? '🏰 Modo Manuscrito activado' : '📱 Modo Moderno restaurado');
+        // Override render functions to use transitions
+        const originalRenderMonth = renderMonthView;
+        renderMonthView = async (date) => {
+            safeViewTransition(async () => {
+                await originalRenderMonth(date);
+            });
+        };
+
+        const originalShowHome = showHome;
+        showHome = async () => {
+            safeViewTransition(async () => {
+                await originalShowHome();
+            });
+        };
+
+        // --- Feature: Skeleton Loading Support ---
+        function showSkeletons() {
+            const list = document.getElementById('modernEventsList');
+            if (list) {
+                list.innerHTML = `
+                   <div style="padding:10px;">
+                       <div class="skeleton" style="height:20px; width:60%; margin-bottom:10px;"></div>
+                       <div class="skeleton" style="height:60px; width:100%; margin-bottom:8px; border-radius:12px;"></div>
+                       <div class="skeleton" style="height:60px; width:100%; margin-bottom:8px; border-radius:12px;"></div>
+                   </div>
+               `;
+            }
         }
     </script>
 </body>
