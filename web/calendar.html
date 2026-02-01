@@ -162,15 +162,71 @@
             position: relative;
         }
 
+        .header-actions {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            flex-direction: row !important;
+        }
+
         /* 5. Skeleton Loading (Block D) */
         .skeleton {
             background: #eee;
             background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
             background-size: 200% 100%;
             animation: 1.5s shine linear infinite;
-            border-radius: 4px;
-            color: transparent !important;
         }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            animation: toast-in 0.3s ease-out, toast-out 0.3s ease-in 2.7s forwards;
+            white-space: nowrap;
+        }
+
+        @keyframes toast-in {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes toast-out {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
 
         .skeleton * {
             visibility: hidden;
@@ -759,14 +815,16 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 12px;
+            padding: 4px 12px;
             background: #2e7d32;
             color: white;
             flex-shrink: 0;
+            min-height: 36px;
         }
 
         .year-nav .title {
             font-weight: 700;
+            font-size: 12px;
         }
 
         .year-nav button {
@@ -3434,7 +3492,7 @@
                         <option value="Trabajo">💼 Trabajo</option>
                         <option value="Personal">👤 Personal</option>
                         <option value="Familia">👨‍👩‍👧‍👦 Familia</option>
-                        <option value="Salud">🏥 Salud</option>
+                        <option value="Salud">💊 Salud</option>
                         <option value="Estudio">📚 Estudio</option>
                         <option value="Deporte">⚽ Deporte</option>
                         <option value="Viaje">✈️ Viaje</option>
@@ -3542,6 +3600,7 @@
         // Estado global
         let currentDate = new Date();
         let currentUserId = '1';
+        let currentView = 'home';
         let selectedDate = null;
         let db = null;
         let isFirebaseConnected = false;
@@ -4543,6 +4602,7 @@
         // Mostrar tabs
         function showTab(tab) {
             console.log('🔄 Cambiando a pestaña:', tab);
+            currentView = tab;
             // Remover active de todos los botones
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -7004,7 +7064,7 @@
                 'Trabajo': '💼',
                 'Personal': '👤',
                 'Familia': '👨‍👩‍👧‍👦',
-                'Salud': '🏥',
+                'Salud': '💊',
                 'Estudio': '📚',
                 'Deporte': '⚽',
                 'Viaje': '✈️',
@@ -8239,6 +8299,23 @@
             showToast(isZen ? '🧘 Modo Zen activado' : '👀 Modo Zen desactivado');
         }
 
+        // Función Toast Universal
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
+            // Auto eliminar después de la animación
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
         // Restore Zen Mode pref on load
         if (localStorage.getItem('zenMode') === 'true') {
             document.body.classList.add('zen-mode');
@@ -8282,6 +8359,7 @@
             }
         }
     </script>
+    <div id="toast-container"></div>
 </body>
 
 </html>
