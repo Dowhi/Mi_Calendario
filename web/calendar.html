@@ -138,13 +138,27 @@
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
 
-        /* 2. Zen Mode (Block B) */
-        body.zen-mode .header-actions,
+        /* 2. Zen Mode (Block B) - Fix: Keep toggle visible and force contrasting colors */
+        body.zen-mode .header-actions button:not(.zen-toggle),
+        body.zen-mode .tab-nav,
         body.zen-mode .bottom-nav,
         body.zen-mode .floating-action-button {
-            opacity: 0;
-            pointer-events: none;
+            opacity: 0 !important;
+            pointer-events: none !important;
             transition: opacity 0.5s ease;
+        }
+
+        body.zen-mode .header-actions {
+            pointer-events: auto !important;
+        }
+
+        /* Essential Header Action visibility */
+        .header-actions button {
+            color: white !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            z-index: 100 !important;
+            position: relative;
         }
 
         /* 5. Skeleton Loading (Block D) */
@@ -3062,9 +3076,10 @@
         }
 
         .upcoming-events-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+            margin: 10px 0;
         }
 
         .modern-event-item {
