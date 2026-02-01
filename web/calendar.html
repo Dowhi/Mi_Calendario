@@ -48,7 +48,34 @@
         :root {
             --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --user-theme-color: #1B5E20;
+            /* Dynamic Chameleon Color */
         }
+
+        /* Weather Backgrounds (Block B - Idea 12) */
+        body[data-weather="clear"] {
+            background: linear-gradient(135deg, #FFAD60 0%, #FFEEAD 100%);
+        }
+
+        body[data-weather="cloudy"] {
+            background: linear-gradient(135deg, #D3D3D3 0%, #f5f5f5 100%);
+        }
+
+        body[data-weather="rain"] {
+            background: linear-gradient(135deg, #708090 0%, #D3D3D3 100%);
+        }
+
+        body[data-weather="night"] {
+            background: linear-gradient(135deg, #191970 0%, #000080 100%);
+            color: white;
+        }
+
+        body[data-weather="night"] .header,
+        body[data-weather="night"] .tab-nav,
+        body[data-weather="night"] .month-nav {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
 
         /* 1. Custom Scrollbar */
         ::-webkit-scrollbar {
@@ -140,87 +167,35 @@
             }
         }
 
-        /* Header */
+        /* Header - Chameleon Support */
         .header {
-            background: #1B5E20;
+            background: var(--user-theme-color);
             color: white;
             padding: 4px 12px;
             padding-top: max(4px, calc(env(safe-area-inset-top) + 4px));
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             flex-shrink: 0;
-            min-height: 36px;
+            min-height: 44px;
+            /* Slightly taller for premium feel */
+            transition: background 0.5s ease;
         }
 
         .header-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
         }
 
-        .header-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        /* 2. Zen Mode Toggle (Block B) */
-        .zen-toggle {
-            font-size: 14px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 50%;
-            transition: background 0.2s;
-        }
-
-        .zen-toggle:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .header-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 6px;
-            padding: 4px 8px;
-            color: white;
-            font-size: 11px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .header-btn:active {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .menu-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            border-radius: 6px;
-            padding: 4px;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-        }
-
-        .menu-btn:active {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        /* Tab Navigation */
+        /* Tab Navigation - Chameleon Support */
         .tab-nav {
-            background: #1976D2;
+            background: var(--user-theme-color);
+            filter: brightness(1.1);
             display: flex;
             flex-shrink: 0;
-            min-height: 32px;
+            min-height: 40px;
+            transition: background 0.5s ease;
         }
 
         .tab-btn {
@@ -228,31 +203,31 @@
             background: transparent;
             border: none;
             color: white;
-            padding: 6px 4px;
+            padding: 8px 4px;
             font-size: 11px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.3s ease;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .tab-btn.active {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: inset 0 -3px 0 white;
         }
 
-        .tab-btn:active {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        /* Month Navigation */
+        /* Month Navigation - Chameleon Support */
         .month-nav {
-            background: #2196F3;
+            background: var(--user-theme-color);
+            filter: brightness(1.2);
             padding: 4px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
-            min-height: 28px;
+            min-height: 36px;
+            transition: background 0.5s ease;
         }
 
         .month-nav button {
@@ -322,7 +297,7 @@
             margin: 12px 0;
             padding: 12px;
             background: #f7f7f7;
-            border-radius: 12px;
+            border-radius: 24px;
         }
 
         .settings-row {
@@ -360,7 +335,7 @@
             gap: 8px;
             background: #e9e9e9;
             padding: 4px;
-            border-radius: 12px;
+            border-radius: 24px;
             position: relative;
         }
 
@@ -1061,7 +1036,7 @@
             background: white;
             width: 100%;
             max-width: 400px;
-            border-radius: 16px;
+            border-radius: 24px;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
@@ -1072,7 +1047,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-radius: 16px 16px 0 0;
+            border-radius: 24px 16px 0 0;
         }
 
         .alarm-modal-title {
@@ -1574,7 +1549,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-radius: 16px 16px 0 0;
+            border-radius: 24px 16px 0 0;
         }
 
         .notes-title {
@@ -1968,7 +1943,7 @@
 
         .modal-content {
             background: white;
-            border-radius: 16px;
+            border-radius: 24px;
             padding: 24px;
             width: 100%;
             max-width: 400px;
@@ -2146,7 +2121,7 @@
             top: 10px;
             right: 10px;
             padding: 4px 8px;
-            border-radius: 12px;
+            border-radius: 24px;
             font-size: 10px;
             font-weight: 600;
             z-index: 1000;
@@ -2316,7 +2291,7 @@
             background: linear-gradient(135deg, #1A237E, #283593, #3949AB);
             color: white;
             padding: 24px;
-            border-radius: 16px;
+            border-radius: 24px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             position: relative;
             overflow: hidden;
@@ -2352,7 +2327,7 @@
 
         .home-event-item {
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 24px;
             padding: 16px;
             display: flex;
             align-items: center;
@@ -2552,7 +2527,7 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
-            border-radius: 16px;
+            border-radius: 24px;
             padding: 12px;
             box-shadow: var(--glass-shadow);
         }
@@ -2659,7 +2634,7 @@
         .action-icon-btn {
             background: rgba(255, 255, 255, 0.8);
             border: none;
-            border-radius: 16px;
+            border-radius: 24px;
             aspect-ratio: 1;
             display: flex;
             flex-direction: column;
@@ -2795,7 +2770,7 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 16px;
+            border-radius: 24px;
             padding: 16px;
             margin-bottom: 16px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
@@ -2814,7 +2789,7 @@
         .quick-access-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 16px;
+            border-radius: 24px;
             padding: 20px;
             display: flex;
             flex-direction: column;
@@ -2877,7 +2852,7 @@
         /* Birthday Card */
         .birthday-card {
             background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            border-radius: 16px;
+            border-radius: 24px;
             padding: 20px;
             margin-bottom: 16px;
             box-shadow: 0 4px 16px rgba(252, 182, 159, 0.3);
@@ -2941,7 +2916,7 @@
 
         .home-event-item {
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 24px;
             padding: 12px;
             display: flex;
             align-items: center;
@@ -3097,7 +3072,7 @@
             align-items: center;
             gap: 12px;
             background: rgba(255, 255, 255, 0.9);
-            border-radius: 12px;
+            border-radius: 24px;
             padding: 12px;
             box-shadow: var(--shadow-soft);
             border: 1px solid rgba(255, 255, 255, 0.6);
@@ -3198,7 +3173,7 @@
                         <span id="weatherTemp" style="font-size: 24px; font-weight: 800;">--°</span>
                     </div>
                     <div
-                        style="font-size: 12px; color: #4fc3f7; background: rgba(79, 195, 247, 0.1); padding: 4px 8px; border-radius: 12px; font-weight: 600;">
+                        style="font-size: 12px; color: #4fc3f7; background: rgba(79, 195, 247, 0.1); padding: 4px 8px; border-radius: 24px; font-weight: 600;">
                         <span id="weatherRain">--%</span> 💧
                     </div>
                 </div>
@@ -4118,6 +4093,9 @@
                 { name: 'Usuario', color: '#3f51b5', avatar: '👤', avatarType: 'emoji' };
             const userName = user.name || 'Usuario';
 
+            // Chameleon Theme (Idea 11)
+            document.documentElement.style.setProperty('--user-theme-color', user.color || '#3f51b5');
+
             // 2. Actualizar Cabecera Moderna (Modern Premium)
             const now = new Date();
             const hour = now.getHours();
@@ -4437,12 +4415,18 @@
 
                     // Map WMO codes to icons
                     let icon = '☀️';
-                    if (code >= 1 && code <= 3) icon = '⛅';
-                    if (code >= 45 && code <= 48) icon = '🌫️';
-                    if (code >= 51 && code <= 67) icon = '🌧️';
-                    if (code >= 71 && code <= 77) icon = '❄️';
-                    if (code >= 80 && code <= 82) icon = '🌦️';
-                    if (code >= 95) icon = '⚡';
+                    let weatherLabel = 'clear';
+                    if (code >= 1 && code <= 3) { icon = '⛅'; weatherLabel = 'cloudy'; }
+                    if (code >= 45 && code <= 48) { icon = '🌫️'; weatherLabel = 'cloudy'; }
+                    if (code >= 51 && code <= 67) { icon = '🌧️'; weatherLabel = 'rain'; }
+                    if (code >= 71 && code <= 77) { icon = '❄️'; weatherLabel = 'cloudy'; }
+                    if (code >= 80 && code <= 82) { icon = '🌦️'; weatherLabel = 'rain'; }
+                    if (code >= 95) { icon = '⚡'; weatherLabel = 'rain'; }
+
+                    // Night check
+                    if (data.current_weather.is_day === 0) weatherLabel = 'night';
+
+                    document.body.dataset.weather = weatherLabel;
 
                     tempEl.textContent = `${temp}°`;
                     iconEl.textContent = icon;
