@@ -6460,9 +6460,10 @@
                 const events = await getEventsForDate(date);
 
                 // Buscar TODAS las notas del usuario actual
+                // FIX: Usar comparación robusta de IDs (String vs Number)
                 const userNotes = events
                     .map((event, index) => ({ ...event, originalIndex: index }))
-                    .filter(event => event.type === 'note' && event.userId === currentUserId);
+                    .filter(event => event.type === 'note' && String(event.userId) === String(currentUserId));
 
                 if (userNotes.length > 0) {
                     userNotes.forEach((note) => {
@@ -6485,6 +6486,8 @@
 
                     console.log(`✅ ${userNotes.length} notas del usuario actual cargadas`);
                 } else {
+                    const dateStr = date.toLocaleDateString('es-ES').split('/').reverse().join('-');
+                    console.info(`ℹ️ No se encontró nota del usuario actual para ${dateStr}`);
                     notesList.innerHTML = '<div style="text-align: center; color: #999; padding: 10px; font-size: 13px; font-style: italic;">No hay notas para este día</div>';
                 }
 
