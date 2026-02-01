@@ -1408,9 +1408,12 @@
         }
 
         /* Contenedor scrollable para el contenido */
-        .notes-modal-scrollable {
-            overflow-y: auto;
+        .notes-modal-body {
             flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px 0;
+            /* Add vertical padding for breathing room */
             display: flex;
             flex-direction: column;
         }
@@ -3260,68 +3263,79 @@
             </div>
 
             <!-- Campo de texto -->
-            <div class="notes-input-container">
-                <div class="notes-content-editable" id="notesTextarea" contenteditable="true"
-                    data-placeholder="Notas del día..."></div>
-            </div>
-
-            <!-- Botones de formato -->
-            <div class="notes-format-buttons">
-                <button class="format-btn" id="formatBold" onclick="toggleFormat('bold')">B</button>
-                <button class="format-btn" id="formatItalic" onclick="toggleFormat('italic')">I</button>
-                <button class="format-btn" id="formatUnderline" onclick="toggleFormat('underline')">U</button>
-            </div>
-
-            <!-- Control de tamaño de texto -->
-            <div class="notes-text-size-container">
-                <label class="notes-text-size-label">Tamaño del texto en celdas:</label>
-                <div class="notes-text-size-control">
-                    <span class="notes-text-size-value" id="notesTextSizeValue">11</span>
-                    <input type="range" id="notesTextSizeSlider" min="8" max="16" value="11" step="1"
-                        oninput="updateNotesTextSize(this.value)" class="notes-text-size-slider">
+            <div class="notes-modal-body">
+                <div class="notes-input-container">
+                    <div class="notes-content-editable" id="notesTextarea" contenteditable="true"
+                        data-placeholder="Notas del día..."></div>
                 </div>
-            </div>
 
-            <!-- Campo de Hora (opcional) -->
-            <div class="notes-time-container">
-                <label class="notes-time-label">🕐 Hora del evento (opcional):</label>
-                <input type="time" id="notesTimeInput" class="notes-time-input" placeholder="HH:MM">
-            </div>
-
-            <!-- Selector de Categoría -->
-            <div class="notes-category-container">
-                <label class="notes-category-label">🏷️ Categoría (opcional):</label>
-                <select id="notesCategorySelect" class="notes-category-select">
-                    <option value="">Ninguno</option>
-                    <option value="Cumpleaños">🎂 Cumpleaños</option>
-                    <option value="Trabajo">💼 Trabajo</option>
-                    <option value="Personal">👤 Personal</option>
-                    <option value="Familia">👨‍👩‍👧‍👦 Familia</option>
-                    <option value="Salud">🏥 Salud</option>
-                    <option value="Estudio">📚 Estudio</option>
-                    <option value="Deporte">⚽ Deporte</option>
-                    <option value="Viaje">✈️ Viaje</option>
-                    <option value="Reunión">🤝 Reunión</option>
-                    <option value="Compras">🛒 Compras</option>
-                    <option value="Evento">🎉 Evento</option>
-                    <option value="Recordatorio">⏰ Recordatorio</option>
-                </select>
-            </div>
-
-            <!-- Selector de visibilidad -->
-            <div class="notes-visibility-container">
-                <label class="notes-visibility-label">👥 Visibilidad:</label>
-                <div class="notes-visibility-options">
-                    <label class="notes-private-label">
-                        <input type="checkbox" id="notesPrivateCheck" class="notes-visibility-checkbox">
-                        <span>🔒 Solo yo</span>
-                    </label>
+                <!-- Botones de formato -->
+                <div class="notes-format-buttons">
+                    <button class="format-btn" id="formatBold" onclick="toggleFormat('bold')">B</button>
+                    <button class="format-btn" id="formatItalic" onclick="toggleFormat('italic')">I</button>
+                    <button class="format-btn" id="formatUnderline" onclick="toggleFormat('underline')">U</button>
                 </div>
-                <div id="notesUserSelection" class="notes-user-selection" style="display: none;">
-                    <!-- Los checkboxes de usuarios se generarán aquí dinámicamente -->
-                </div>
-            </div>
 
+                <!-- Control de tamaño de texto -->
+                <div class="notes-text-size-container">
+                    <label class="notes-text-size-label">Tamaño del texto en celdas:</label>
+                    <div class="notes-text-size-control">
+                        <span class="notes-text-size-value" id="notesTextSizeValue">11</span>
+                        <input type="range" id="notesTextSizeSlider" min="8" max="16" value="11" step="1"
+                            oninput="updateNotesTextSize(this.value)" class="notes-text-size-slider">
+                    </div>
+                </div>
+
+                <!-- Campo de Hora (opcional) -->
+                <div class="notes-time-container">
+                    <label class="notes-time-label">🕐 Hora del evento (opcional):</label>
+                    <input type="time" id="notesTimeInput" class="notes-time-input" placeholder="HH:MM">
+                </div>
+
+                <!-- Selector de Categoría -->
+                <div class="notes-category-container">
+                    <label class="notes-category-label">🏷️ Categoría (opcional):</label>
+                    <select id="notesCategorySelect" class="notes-category-select">
+                        <option value="">Ninguno</option>
+                        <option value="Cumpleaños">🎂 Cumpleaños</option>
+                        <option value="Trabajo">💼 Trabajo</option>
+                        <option value="Personal">👤 Personal</option>
+                        <option value="Familia">👨‍👩‍👧‍👦 Familia</option>
+                        <option value="Salud">🏥 Salud</option>
+                        <option value="Estudio">📚 Estudio</option>
+                        <option value="Deporte">⚽ Deporte</option>
+                        <option value="Viaje">✈️ Viaje</option>
+                        <option value="Reunión">🤝 Reunión</option>
+                        <option value="Compras">🛒 Compras</option>
+                        <option value="Evento">🎉 Evento</option>
+                        <option value="Recordatorio">⏰ Recordatorio</option>
+                        <option value="Automóvil">🚗 Automóvil</option>
+                        <option value="Mecánico">🔧 Mecánico</option>
+                        <option value="Gestión">📝 Gestión</option>
+                        <option value="Veterinario">🐾 Veterinario</option>
+                        <option value="Gimnasio">🏋️‍♀️ Gimnasio</option>
+                        <option value="Clases">👨‍🏫 Clases</option>
+                        <option value="Cita">📅 Cita</option>
+                        <option value="Ocio">🍿 Ocio</option>
+                        <option value="Dentista">🦷 Dentista</option>
+                    </select>
+                </div>
+
+                <!-- Selector de visibilidad -->
+                <div class="notes-visibility-container">
+                    <label class="notes-visibility-label">👥 Visibilidad:</label>
+                    <div class="notes-visibility-options">
+                        <label class="notes-private-label">
+                            <input type="checkbox" id="notesPrivateCheck" class="notes-visibility-checkbox">
+                            <span>🔒 Solo yo</span>
+                        </label>
+                    </div>
+                    <div id="notesUserSelection" class="notes-user-selection" style="display: none;">
+                        <!-- Los checkboxes de usuarios se generarán aquí dinámicamente -->
+                    </div>
+                </div>
+
+            </div>
             <!-- Botones de acción -->
             <div class="notes-action-buttons">
                 <button class="action-btn delete-btn" onclick="deleteNote()">BORRAR</button>
@@ -6768,8 +6782,18 @@
                 'Viaje': '✈️',
                 'Reunión': '🤝',
                 'Compras': '🛒',
+                'Compras': '🛒',
                 'Evento': '🎉',
-                'Recordatorio': '⏰'
+                'Recordatorio': '⏰',
+                'Automóvil': '🚗',
+                'Mecánico': '🔧',
+                'Gestión': '📝',
+                'Veterinario': '🐾',
+                'Gimnasio': '🏋️‍♀️',
+                'Clases': '👨‍🏫',
+                'Cita': '📅',
+                'Ocio': '🍿',
+                'Dentista': '🦷'
             };
 
             // Obtener usuarios seleccionados (siempre incluir al autor)
