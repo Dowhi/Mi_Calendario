@@ -4141,8 +4141,8 @@
 
                 const time = event.time || '';
                 const color = event.userColor || getUserColor(event.userId);
-                // Si es nota, el título es el texto.
-                const title = event.text || 'Nota';
+                // Si es nota, el título es el texto. Si es recurrente, el título es event.title.
+                const title = event.text || event.title || 'Nota';
                 // Simplificar categoría
                 const category = event.type === 'recurring' ? 'Recurrente' : 'Nota/Cita';
 
@@ -4215,40 +4215,42 @@
                 cell.classList.add('mini-calendar-cell-fixed'); // Clase para CSS control
 
                 // Determinamos estilo basado en TIEMPO (Pasado vs Futuro)
-                // Normalizamos fechas para comparar solo días
-                // Determinamos estilo basado en TIEMPO (Pasado vs Futuro)
                 // Usamos timestamps planos al medio día para evitar zonas horarias
                 const checkTime = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
                 const todayTime = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-
                 const isPast = checkTime < todayTime;
 
-                // USER REQUEST: Tono oscuro (#e0e0e0) para pasado, BLANCO ABSOLUTO para hoy y futuro
-                // NOTA: Ignoramos completamente si es 'otherMonth'. El tiempo manda.
-                const bgColor = isPast ? '#e8e8e8' : '#ffffff';
+                // FIX: Verificar si la celda YA tiene un background (turno asignado)
+                // Si cell.style.background tiene valor (gradiente o color), LO RESPETAMOS.
+                // Si no, aplicamos la lógica de limpieza (Gris pasado / Blanco futuro).
 
-                // Estilos inline forzados para garantizar fix visual y limpieza
+                const currentBg = cell.style.background || cell.style.backgroundColor;
+                const hasShift = currentBg && currentBg !== '' && currentBg !== 'initial' && currentBg !== 'transparent';
+
+                if (!hasShift) {
+                    const bgColor = isPast ? '#e8e8e8' : '#ffffff';
+                    cell.style.backgroundColor = bgColor;
+
+                    // Asegurar que el número tenga color legible en fondo claro
+                    const dayNumber = cell.querySelector('.year-day-number') || cell.querySelector('.calendar-day-number');
+                    if (dayNumber) {
+                        dayNumber.style.color = '#333';
+                        dayNumber.style.textShadow = 'none';
+                        dayNumber.style.backgroundColor = 'transparent';
+                        if (isPast) dayNumber.style.opacity = '0.7';
+                    }
+                } else {
+                    // Si TIENE turno, aseguramos estilos básicos del contenedor pero NO tocamos el fondo
+                    // El renderDay ya se encargó de poner el background correcto (color o gradiente)
+                    // Solo aseguramos layout flex
+                    cell.style.display = 'flex';
+                    cell.style.flexDirection = 'column';
+                }
+
+                // Estilos comunes irrenunciables para layout visual
                 cell.style.minHeight = '120px';
                 cell.style.maxHeight = '120px';
                 cell.style.overflow = 'hidden';
-                cell.style.display = 'flex';
-                cell.style.flexDirection = 'column';
-                cell.style.justifyContent = 'flex-start';
-                cell.style.backgroundColor = bgColor;
-
-                // LIMPIEZA DE TURNO Y APLICACIÓN DE COLOR FONDO
-                // Forzamos el color calculado con !important simulado (inline style override)
-                cell.setAttribute('style', cell.getAttribute('style') + `; background: ${bgColor} !important; background-color: ${bgColor} !important;`);
-
-                // Asegurar que el número tenga color legible
-                const dayNumber = cell.querySelector('.year-day-number') || cell.querySelector('.calendar-day-number');
-                if (dayNumber) {
-                    dayNumber.style.color = '#333';
-                    dayNumber.style.textShadow = 'none';
-                    dayNumber.style.backgroundColor = 'transparent';
-                    // Si es pasado, quizás opacar un poco el número
-                    if (isPast) dayNumber.style.opacity = '0.7';
-                }
             }
         }
 
