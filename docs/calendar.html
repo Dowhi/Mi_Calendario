@@ -5691,6 +5691,9 @@
                     z-index: 15;
                 `;
 
+                // Determinar si debemos condensar la visualización
+                const shouldCondense = notes.length > 1;
+
                 // Renderizar cada nota o evento recurrente
                 notes.forEach(note => {
                     // Filtrar notas privadas y visibilidad
@@ -5721,7 +5724,19 @@
                         const noteTextEl = document.createElement('div');
                         noteTextEl.className = 'note-text';
 
-                        noteTextEl.textContent = note.title;
+                        // Lógica de condensación para recurrentes
+                        let displayText = note.title;
+                        if (shouldCondense) {
+                            const firstWord = note.title.split(' ')[0];
+                            const timeStr = note.time ? ` ${note.time}` : '';
+                            displayText = `${firstWord}${timeStr}`;
+                        } else if (note.time) {
+                            // Si es única nota, añadir hora si existe y no está en el título
+                            // (Opcional, pero consistente con notas regulares)
+                            displayText = `${note.title}`;
+                        }
+
+                        noteTextEl.textContent = displayText;
                         const noteFontSize = 11;
                         noteTextEl.style.cssText = `
                             color: ${lineUserColor};
@@ -5734,36 +5749,63 @@
                         `;
                         allNotesContainer.appendChild(noteTextEl);
                     } else if (note.text && note.text.trim() !== '') {
-                        // Dividir el texto por saltos de línea para renderizar cada línea con su color
-                        const noteLines = note.text.split('\n').filter(line => line.trim() !== '');
+                        // Lógica de condensación para notas regulares
+                        if (shouldCondense) {
+                            const firstLine = note.text.split('\n').filter(line => line.trim() !== '')[0] || '';
+                            const firstWord = firstLine.split(' ')[0];
+                            const timeStr = note.time ? ` ${note.time}` : '';
+                            const displayText = `${firstWord}${timeStr}`;
 
-                        noteLines.forEach((line, index) => {
-                            // Usar el color del usuario que creó la nota (ya no necesitamos heurística por contenido)
                             const lineUserColor = getUserColor(note.userId);
                             const noteTextEl = document.createElement('div');
                             noteTextEl.className = 'note-text';
-
-                            // Agregar hora a la primera línea si existe
-                            let displayText = line;
-                            if (index === 0 && note.time) {
-                                displayText = `${line} ${note.time}`;
-                            }
-
                             noteTextEl.textContent = displayText;
-                            // Usar el tamaño guardado en la nota o el por defecto
+
+                            // Usar estilo simplificado
                             const noteFontSize = note.textSize || 11;
-                            const fontSize = index === 0 ? noteFontSize : noteFontSize * 0.85;
-                            const fontWeight = index === 0 ? '700' : 'normal';
                             noteTextEl.style.cssText = `
                                 color: ${lineUserColor};
-                                font-weight: ${fontWeight};
-                                font-size: ${fontSize}px;
-                                white-space: normal;
-                                word-wrap: break-word;
-                                overflow-wrap: break-word;
+                                font-weight: 700;
+                                font-size: ${noteFontSize}px;
+                                white-space: nowrap;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
                             `;
                             allNotesContainer.appendChild(noteTextEl);
-                        });
+
+                        } else {
+                            // Lógica existente para nota única (texto completo)
+                            // Dividir el texto por saltos de línea para renderizar cada línea con su color
+                            const noteLines = note.text.split('\n').filter(line => line.trim() !== '');
+
+                            noteLines.forEach((line, index) => {
+                                // Usar el color del usuario que creó la nota (ya no necesitamos heurística por contenido)
+                                const lineUserColor = getUserColor(note.userId);
+                                const noteTextEl = document.createElement('div');
+                                noteTextEl.className = 'note-text';
+
+                                // Agregar hora a la primera línea si existe
+                                let displayText = line;
+                                if (index === 0 && note.time) {
+                                    displayText = `${line} ${note.time}`;
+                                }
+
+                                noteTextEl.textContent = displayText;
+                                // Usar el tamaño guardado en la nota o el por defecto
+                                const noteFontSize = note.textSize || 11;
+                                const fontSize = index === 0 ? noteFontSize : noteFontSize * 0.85;
+                                const fontWeight = index === 0 ? '700' : 'normal';
+                                noteTextEl.style.cssText = `
+                                    color: ${lineUserColor};
+                                    font-weight: ${fontWeight};
+                                    font-size: ${fontSize}px;
+                                    white-space: normal;
+                                    word-wrap: break-word;
+                                    overflow-wrap: break-word;
+                                `;
+                                allNotesContainer.appendChild(noteTextEl);
+                            });
+                        }
                     }
                 });
 
